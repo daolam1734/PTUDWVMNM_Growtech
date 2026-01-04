@@ -1,5 +1,6 @@
 <?php
-require_once __DIR__ . '/../includes/header.php';
+if (session_status() == PHP_SESSION_NONE) session_start();
+require_once __DIR__ . '/../functions.php';
 
 $errors = [];
 $success = null;
@@ -39,12 +40,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             setEmailVerificationToken($uid, $token, $expires);
             $link = sendVerificationEmailSimulated($email, $token);
             set_flash('success', "Đăng ký thành công. Vui lòng kiểm tra email để xác thực tài khoản. (Link test: <a href='".htmlspecialchars($link)."' target='_blank'>Xác thực</a>)");
+            header('Location: login.php');
+            exit;
         } else {
             $errors[] = 'Đăng ký thất bại, thử lại sau.';
         }
     }
     if (!empty($errors)) set_flash('error', implode('<br>', $errors));
 }
+
+require_once __DIR__ . '/../includes/header.php';
 ?>
 <div class="row justify-content-center my-5">
   <div class="col-md-6">

@@ -1,13 +1,22 @@
-Hoàn thành! Khung dự án, schema DB, các trang công khai, giỏ hàng (SESSION) và CRUD khu vực quản trị đã được triển khai.
+# Hoàn thành dự án GrowTech - Tết Edition!
 
-Các nội dung kèm theo:
-- Full source code trong thư mục này (xem `README.md` để biết cách chạy)
-- `database.sql` và `config/create_db.php` để khởi tạo DB và tài khoản admin
-- Giải thích chi tiết có trong `docs/explanations_vi.md` và `README.md`
+Dự án đã được nâng cấp toàn diện với thương hiệu **GrowTech** và chủ đề **Tết đến xuân về**.
 
-Các bước tiếp theo bạn có thể yêu cầu:
-- Thêm chức năng thanh toán & quản lý đơn hàng
-- Tài khoản người dùng và lịch sử đơn hàng
-- Upload ảnh và validate dữ liệu
+### Các thay đổi chính:
+1. **Thương hiệu**: Đổi tên thành **GrowTech** với slogan "Chuẩn công nghệ – vững niềm tin".
+2. **Giao diện Tết**: 
+   - Header & Footer tông màu Đỏ - Vàng sang trọng.
+   - Hiệu ứng hoa mai, hoa đào, bao lì xì rơi (Blossom Effect).
+   - Banner Tết rực rỡ tại trang chủ.
+3. **Sửa lỗi & Tối ưu**:
+   - Sửa lỗi ảnh không hiển thị (`ERR_NAME_NOT_RESOLVED`) bằng cách chuẩn hóa URL ảnh trong DB.
+   - Refactor Admin Panel để hỗ trợ bảng `product_images` (thay vì cột `image` cũ).
+   - Cập nhật hàm `getProductImage()` để xử lý ảnh linh hoạt và có fallback.
+4. **Tính năng**: Tìm kiếm gợi ý (AJAX), Giỏ hàng, Thanh toán, Quản lý đơn hàng.
 
-Chạy local: khởi động XAMPP, truy cập `http://localhost/weblaptop/config/create_db.php`, sau đó `http://localhost/weblaptop`.
+### Cách chạy:
+- Khởi động XAMPP (Apache & MySQL).
+- Truy cập `http://localhost/weblaptop/config/create_db.php` để khởi tạo lại dữ liệu (nếu cần).
+- Truy cập `http://localhost/weblaptop` để trải nghiệm không khí Tết tại GrowTech!
+
+Admin: `admin` / `admin123` tại `/admin/login.php`.

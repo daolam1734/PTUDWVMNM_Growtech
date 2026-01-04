@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../includes/header.php';
+if (session_status() == PHP_SESSION_NONE) session_start();
 // Clear session and remember cookie
 session_unset();
 session_destroy();

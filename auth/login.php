@@ -1,5 +1,7 @@
 <?php
-require_once __DIR__ . '/../includes/header.php';
+if (session_status() == PHP_SESSION_NONE) session_start();
+require_once __DIR__ . '/../functions.php';
+
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $identity = trim($_POST['identity'] ?? '');
@@ -25,6 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 session_regenerate_id(true);
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_name'] = $user['full_name'];
+                $_SESSION['user_role'] = $user['role'];
+                if ($user['role'] === 'admin') {
+                    $_SESSION['admin_logged_in'] = $user['username'];
+                }
                 // remember me (simple)
                 if ($remember) {
                     $token = bin2hex(random_bytes(24));
@@ -45,6 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (!empty($errors)) set_flash('error', implode('<br>', $errors));
 }
+
+require_once __DIR__ . '/../includes/header.php';
 ?>
 <div class="row justify-content-center my-5">
   <div class="col-md-6">

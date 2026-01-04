@@ -15,5 +15,18 @@ if ($q !== '') {
         LIMIT 10");
     $stmt->execute([$like, $like, $like]);
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Fix image URLs
+    foreach ($results as &$r) {
+        $img = $r['image'];
+        if (!$img || (strpos($img, 'http') !== 0 && strpos($img, '/') !== 0)) {
+            if ($img && (preg_match('/^\d+x\d+/', $img) || strpos($img, 'text=') !== false)) {
+                $img = 'https://placehold.co/' . $img;
+            } else {
+                $img = 'https://placehold.co/150?text=No+Image';
+            }
+        }
+        $r['image'] = $img;
+    }
 }
 echo json_encode($results, JSON_UNESCAPED_UNICODE);
