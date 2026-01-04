@@ -1,6 +1,27 @@
 <?php
 require_once __DIR__ . '/config/database.php';
 
+if (session_status() == PHP_SESSION_NONE) session_start();
+
+// Auto-login via Remember Me cookie
+if (empty($_SESSION['user_id']) && !empty($_COOKIE['weblaptop_remember'])) {
+    $token = $_COOKIE['weblaptop_remember'];
+    $stmt = $pdo->prepare("SELECT t.*, u.full_name, u.username, u.role FROM auth_tokens t JOIN users u ON t.user_id = u.id WHERE t.expires_at > NOW()");
+    $stmt->execute();
+    $tokens = $stmt->fetchAll();
+    foreach ($tokens as $t) {
+        if (password_verify($token, $t['token_hash'])) {
+            $_SESSION['user_id'] = $t['user_id'];
+            $_SESSION['user_name'] = $t['full_name'];
+            $_SESSION['user_role'] = $t['role'];
+            if ($t['role'] === 'admin') {
+                $_SESSION['admin_logged_in'] = $t['username'];
+            }
+            break;
+        }
+    }
+}
+
 function getProduct($id) {
     global $pdo;
     $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
@@ -8,11 +29,77 @@ function getProduct($id) {
     return $stmt->fetch();
 }
 
-function getProducts() {
+function getProducts($limit = null) {
     global $pdo;
-    return $pdo->query("SELECT * FROM products ORDER BY created_at DESC")->fetchAll();
+    $sql = "SELECT p.*, pi.url as image_url 
+            FROM products p 
+            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.position = 0
+            WHERE p.is_active = 1 
+            ORDER BY p.created_at DESC";
+    if ($limit) $sql .= " LIMIT " . (int)$limit;
+    return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 }
 
+function getProductImage($product_id) {
+    global $pdo;
+    // Simple cache for the same request
+    static $img_cache = [];
+    if (isset($img_cache[$product_id])) return $img_cache[$product_id];
+
+    $stmt = $pdo->prepare("SELECT url FROM product_images WHERE product_id = ? ORDER BY position ASC LIMIT 1");
+    $stmt->execute([$product_id]);
+    $img = $stmt->fetchColumn();
+    
+    // Fix broken placeholder URLs if they exist in DB
+    if ($img && !preg_match('/^https?:\/\//', $img) && !preg_match('/^\//', $img)) {
+        if (preg_match('/^\d+x\d+/', $img)) {
+            $img = 'https://placehold.co/' . $img;
+        }
+    }
+    
+    // Double check for common placeholder patterns that might have been stripped
+    if ($img && strpos($img, 'http') !== 0 && strpos($img, '/') !== 0) {
+        if (strpos($img, 'text=') !== false || preg_match('/^\d+x\d+/', $img)) {
+            $img = 'https://placehold.co/' . $img;
+        }
+    }
+
+    $img_cache[$product_id] = $img ?: 'https://placehold.co/600x400?text=No+Image';
+    return $img_cache[$product_id];
+}
+function getProductSpecs($product_id) {
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT * FROM product_specifications WHERE product_id = ?");
+    $stmt->execute([$product_id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Voucher Functions
+ */
+function getVoucherByCode($code) {
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT * FROM vouchers WHERE code = ? AND is_active = 1 AND (start_date <= NOW() OR start_date IS NULL) AND (end_date >= NOW() OR end_date IS NULL)");
+    $stmt->execute([$code]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+function calculateDiscount($voucher, $subtotal) {
+    if (!$voucher) return 0;
+    if ($subtotal < $voucher['min_order_value']) return 0;
+    if ($voucher['usage_limit'] !== null && $voucher['used_count'] >= $voucher['usage_limit']) return 0;
+
+    $discount = 0;
+    if ($voucher['discount_type'] === 'fixed') {
+        $discount = $voucher['discount_value'];
+    } else {
+        $discount = $subtotal * ($voucher['discount_value'] / 100);
+        if ($voucher['max_discount_amount'] !== null) {
+            $discount = min($discount, $voucher['max_discount_amount']);
+        }
+    }
+    return $discount;
+}
 function isAdmin() {
     return !empty($_SESSION['admin_logged_in']);
 }
@@ -98,6 +185,78 @@ function lockAccount($user_id, $minutes = 15) {
     $stmt->execute([$minutes, $user_id]);
 }
 
+/** ADDRESS HELPERS **/
+function getUserAddresses($user_id) {
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT * FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, id DESC");
+    $stmt->execute([$user_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function getAddressById($id) {
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT * FROM user_addresses WHERE id = ?");
+    $stmt->execute([$id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+/** ORDER HELPERS **/
+function createOrder($data) {
+    global $pdo;
+    try {
+        $pdo->beginTransaction();
+
+        // 1. Insert into orders
+        $stmt = $pdo->prepare("INSERT INTO orders (order_no, user_id, address_id, subtotal, shipping_fee, discount, total, order_status, payment_method, payment_status, notes, created_at) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?, 'dang_cho', ?, 'dang_cho', ?, NOW())");
+        
+        $order_no = 'WL-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
+        $stmt->execute([
+            $order_no,
+            $data['user_id'],
+            $data['address_id'],
+            $data['subtotal'],
+            $data['shipping_fee'],
+            $data['discount'],
+            $data['total'],
+            $data['payment_method'],
+            $data['notes']
+        ]);
+        $order_id = $pdo->lastInsertId();
+
+        // 2. Insert into order_items and update stock
+        $stmtItem = $pdo->prepare("INSERT INTO order_items (order_id, product_id, product_name, sku, quantity, unit_price, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmtStock = $pdo->prepare("UPDATE products SET stock = stock - ? WHERE id = ?");
+        $stmtMovement = $pdo->prepare("INSERT INTO stock_movements (product_id, change_qty, type, reference, note) VALUES (?, ?, 'sale', ?, 'Khách đặt hàng')");
+
+        foreach ($data['items'] as $item) {
+            $itemSubtotal = $item['price'] * $item['quantity'];
+            $stmtItem->execute([
+                $order_id,
+                $item['id'],
+                $item['name'],
+                $item['sku'],
+                $item['quantity'],
+                $item['price'],
+                $itemSubtotal
+            ]);
+
+            // Update stock
+            $stmtStock->execute([$item['quantity'], $item['id']]);
+            
+            // Record movement
+            $stmtMovement->execute([$item['id'], -$item['quantity'], $order_no]);
+        }
+
+        $pdo->commit();
+        return $order_id;
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        error_log("Order creation failed: " . $e->getMessage());
+        return false;
+    }
+}
+
 function isAccountLocked($user) {
     if (!$user) return false;
     if (!empty($user['locked_until']) && strtotime($user['locked_until']) > time()) return true;
@@ -133,5 +292,16 @@ function display_flash() {
         echo '<div class="alert alert-' . $cls . ' flash-alert" role="alert">' . $msg . '</div>';
         echo '</div>';
     }
+}
+
+function slugify($text) {
+    $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+    $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+    $text = preg_replace('~[^-\w]+~', '', $text);
+    $text = trim($text, '-');
+    $text = preg_replace('~-+~', '-', $text);
+    $text = strtolower($text);
+    if (empty($text)) return 'n-a';
+    return $text;
 }
 

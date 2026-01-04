@@ -11,8 +11,34 @@ CREATE TABLE IF NOT EXISTS `users` (
   `full_name` VARCHAR(255),
   `phone` VARCHAR(50),
   `role` ENUM('admin','user') NOT NULL DEFAULT 'user',
+  `email_verified` TINYINT(1) DEFAULT 0,
+  `verification_token` VARCHAR(255),
+  `verification_expires` DATETIME,
+  `failed_logins` INT DEFAULT 0,
+  `locked_until` DATETIME,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Auth tokens for "Remember Me"
+CREATE TABLE IF NOT EXISTS `auth_tokens` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT NOT NULL,
+  `token_hash` VARCHAR(255) NOT NULL,
+  `expires_at` DATETIME NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Password resets
+CREATE TABLE IF NOT EXISTS `password_resets` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT NOT NULL,
+  `token` VARCHAR(255) NOT NULL,
+  `expires_at` DATETIME NOT NULL,
+  `used` TINYINT(1) DEFAULT 0,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- User addresses (multiple per user)
@@ -266,13 +292,13 @@ ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
 
 -- Images
 INSERT IGNORE INTO `product_images` (`product_id`,`url`,`alt`,`position`)
-SELECT p.id,'https://via.placeholder.com/600x400?text=Ultrabook+Alpha','Ultrabook Alpha - main',0 FROM products p WHERE p.sku='ULTRA-001';
+SELECT p.id,'https://placehold.co/600x400?text=Ultrabook+Alpha','Ultrabook Alpha - main',0 FROM products p WHERE p.sku='ULTRA-001';
 
 INSERT IGNORE INTO `product_images` (`product_id`,`url`,`alt`,`position`)
-SELECT p.id,'https://via.placeholder.com/600x400?text=Gaming+Beast','Gaming Beast - main',0 FROM products p WHERE p.sku='GAME-002';
+SELECT p.id,'https://placehold.co/600x400?text=Gaming+Beast','Gaming Beast - main',0 FROM products p WHERE p.sku='GAME-002';
 
 INSERT IGNORE INTO `product_images` (`product_id`,`url`,`alt`,`position`)
-SELECT p.id,'https://via.placeholder.com/600x400?text=Office+Pro','Office Pro - main',0 FROM products p WHERE p.sku='OFF-003';
+SELECT p.id,'https://placehold.co/600x400?text=Office+Pro','Office Pro - main',0 FROM products p WHERE p.sku='OFF-003';
 
 -- Users (admin created via create_db.php is recommended; we add a sample customer)
 -- Note: Replace the password with a proper hash produced by PHP: php -r "echo password_hash('password', PASSWORD_DEFAULT).PHP_EOL;"
@@ -571,7 +597,7 @@ SELECT p.id,'Intel Core i7-1185G7','16GB LPDDR4x','512GB SSD','Intel Iris Xe','1
 
 -- Ảnh sản phẩm (placeholder)
 INSERT IGNORE INTO `product_images` (`product_id`,`url`,`alt`,`position`)
-SELECT p.id, CONCAT('https://via.placeholder.com/800x600?text=', REPLACE(p.name,' ','+')), CONCAT(p.name, ' - hình chính'), 0 FROM products p WHERE p.sku IN ('DELLXPS13','MACBOOKAIR2022','ASUSROG14','THINKPADX1','DELLINSPIRON15','PAVILIONX360','RAZERBLADE15','PREDATORHELIOS','XPS15','SURFACELAPTOP4');
+SELECT p.id, CONCAT('https://placehold.co/800x600?text=', REPLACE(p.name,' ','+')), CONCAT(p.name, ' - hình chính'), 0 FROM products p WHERE p.sku IN ('DELLXPS13','MACBOOKAIR2022','ASUSROG14','THINKPADX1','DELLINSPIRON15','PAVILIONX360','RAZERBLADE15','PREDATORHELIOS','XPS15','SURFACELAPTOP4');
 
 -- Kết thúc phần cập nhật sản phẩm mẫu
 
