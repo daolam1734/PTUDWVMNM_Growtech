@@ -219,6 +219,39 @@ if ($is_filtered) {
         color: #333;
         line-height: 16px;
     }
+    
+    /* Load More Button */
+    .btn-load-more {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,.09);
+        color: rgba(0,0,0,.87);
+        padding: 10px 50px;
+        font-size: 14px;
+        transition: background .2s;
+        border-radius: 2px;
+        box-shadow: 0 1px 1px 0 rgba(0,0,0,.03);
+    }
+    .btn-load-more:hover {
+        background: #f8f8f8;
+        color: var(--tet-red);
+        border-color: var(--tet-red);
+    }
+    
+    /* Suggestion Grid */
+    .suggestion-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+    }
+    @media (max-width: 1200px) {
+        .suggestion-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (max-width: 992px) {
+        .suggestion-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 576px) {
+        .suggestion-grid { grid-template-columns: repeat(2, 1fr); }
+    }
 </style>
 
 <div class="row">
@@ -405,6 +438,42 @@ if ($is_filtered) {
                     </div>
                 </div>
             <?php endforeach; ?>
+
+            <!-- Today's Suggestions (Gợi ý hôm nay) -->
+            <div class="mt-5 mb-4">
+                <div class="section-header" style="border-bottom: 4px solid var(--tet-red);">
+                    <h4 class="section-title py-2 px-4 text-white" style="background: var(--tet-red); margin-bottom: -4px;">GỢI Ý HÔM NAY</h4>
+                </div>
+                <div class="suggestion-grid mt-3" id="suggestion-container">
+                    <?php
+                    // Initial load of 10 products
+                    $stmt_sug = $pdo->query("SELECT p.*, pi.url as image_url FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.position = 0 WHERE p.is_active = 1 ORDER BY p.created_at DESC LIMIT 10");
+                    while ($p = $stmt_sug->fetch()):
+                        $img = $p["image_url"];
+                        if (!$img || (strpos($img, 'http') !== 0 && strpos($img, '/') !== 0)) {
+                            $img = 'https://placehold.co/600x400?text=No+Image';
+                        }
+                    ?>
+                        <div class="suggestion-item">
+                            <a href="product.php?id=<?php echo $p["id"]; ?>" class="text-decoration-none">
+                                <div class="product-grid-item shadow-sm h-100">
+                                    <img src="<?php echo htmlspecialchars($img); ?>" class="product-grid-img" alt="">
+                                    <div class="product-grid-info">
+                                        <div class="product-grid-name"><?php echo htmlspecialchars($p["name"]); ?></div>
+                                        <div class="mt-auto">
+                                            <div class="product-grid-price"><?php echo number_format($p["price"], 0, ",", "."); ?> đ</div>
+                                            <div class="product-grid-sold mt-1">Đã bán <?php echo rand(100, 999); ?>+</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    <?php endwhile; ?>
+                </div>
+                <div class="text-center mt-4">
+                    <button id="btn-load-more" class="btn btn-load-more" data-page="1">Xem thêm</button>
+                </div>
+            </div>
 
         <?php else: ?>
             <!-- Filtered Results Grid -->

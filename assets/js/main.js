@@ -247,4 +247,38 @@ document.addEventListener('DOMContentLoaded', function () {
       timerS.textContent = seconds.toString().padStart(2, '0');
     }, 1000);
   }
+
+  // Load More Products (Gợi ý hôm nay)
+  const btnLoadMore = document.getElementById('btn-load-more');
+  const suggestionContainer = document.getElementById('suggestion-container');
+
+  if (btnLoadMore && suggestionContainer) {
+    btnLoadMore.addEventListener('click', async function() {
+      const page = parseInt(this.getAttribute('data-page'));
+      const nextPage = page + 1;
+      
+      this.disabled = true;
+      this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang tải...';
+      
+      try {
+        const response = await fetch(`/weblaptop/load_more_products.php?page=${nextPage}`);
+        const html = await response.text();
+        
+        if (html.trim() === '') {
+          this.innerHTML = 'Hết sản phẩm';
+          this.classList.add('disabled');
+          return;
+        }
+        
+        suggestionContainer.insertAdjacentHTML('beforeend', html);
+        this.setAttribute('data-page', nextPage);
+        this.disabled = false;
+        this.innerHTML = 'Xem thêm';
+      } catch (error) {
+        console.error('Error loading more products:', error);
+        this.disabled = false;
+        this.innerHTML = 'Thử lại';
+      }
+    });
+  }
 });
