@@ -1,5 +1,44 @@
+// Falling blossoms effect
+function initBlossoms() {
+  console.log("GrowTech: Tet blossoms initialized");
+  const createBlossom = () => {
+    const blossom = document.createElement('div');
+    blossom.className = 'blossom';
+    const types = ['🌸', '🌼', '🧧', '✨'];
+    blossom.innerHTML = types[Math.floor(Math.random() * types.length)];
+    
+    const startLeft = Math.random() * 100;
+    blossom.style.left = startLeft + 'vw';
+    blossom.style.fontSize = (Math.random() * 15 + 20) + 'px';
+    blossom.style.position = 'fixed';
+    blossom.style.top = '-50px';
+    blossom.style.zIndex = '10000';
+    blossom.style.pointerEvents = 'none';
+    blossom.style.color = '#ffc107'; // Fallback color for stars
+    
+    const duration = Math.random() * 5 + 7;
+    blossom.style.animation = `fall ${duration}s linear forwards`;
+    
+    // Ensure it's added to the very end of body
+    document.body.appendChild(blossom);
+
+    // Fallback removal
+    setTimeout(() => {
+      if (blossom.parentNode) blossom.remove();
+    }, duration * 1000 + 1000);
+  };
+
+  // Initial batch
+  for(let i = 0; i < 15; i++) {
+    setTimeout(createBlossom, Math.random() * 3000);
+  }
+  setInterval(createBlossom, 600);
+}
+
 // Header interactions: search suggestions, cart hover, sticky shrink, mobile offcanvas
 document.addEventListener('DOMContentLoaded', function () {
+  initBlossoms();
+  
   // Debounce helper
   function debounce(fn, delay) {
     let t;
@@ -49,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
     selected = -1;
     suggestionsBox.innerHTML = list.map(it => `
       <a href="/weblaptop/product.php?id=${it.id}" class="d-flex suggestion-item p-2 align-items-center" role="option">
-        <img src="${it.image || 'https://via.placeholder.com/80x60'}" width="60" height="45" class="me-2" alt="">
+        <img src="${it.image || 'https://placehold.co/80x60?text=No+Image'}" width="60" height="45" class="me-2" alt="">
         <div class="flex-fill">
           <div class="small text-muted">${it.brand || ''} <span class="mx-1">•</span> ${it.sku}</div>
           <div class="fw-semibold">${it.name}</div>
@@ -112,4 +151,134 @@ document.addEventListener('DOMContentLoaded', function () {
       setTimeout(() => { try { el.remove(); } catch(e){} }, 300);
     }, 5000);
   });
+
+  // Back to Top Button
+  const backToTop = document.createElement('div');
+  backToTop.id = 'back-to-top';
+  backToTop.innerHTML = '<i class="bi bi-arrow-up"></i>';
+  document.body.appendChild(backToTop);
+
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) backToTop.classList.add('show');
+    else backToTop.classList.remove('show');
+  });
+
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // Scroll Container Navigation (Prev/Next buttons)
+  const scrollContainers = document.querySelectorAll('.scroll-container');
+  console.log("GrowTech: Found " + scrollContainers.length + " scroll containers");
+
+  scrollContainers.forEach((container, index) => {
+    const wrapper = container.closest('.scroll-wrapper');
+    if (!wrapper) {
+      console.warn("GrowTech: No wrapper found for scroll container " + index);
+      return;
+    }
+
+    const btnLeft = wrapper.querySelector('.scroll-btn-left');
+    const btnRight = wrapper.querySelector('.scroll-btn-right');
+
+    if (btnLeft) {
+      btnLeft.addEventListener('click', (e) => {
+        e.preventDefault();
+        container.scrollTo({ 
+          left: container.scrollLeft - 400, 
+          behavior: 'smooth' 
+        });
+      });
+    }
+
+    if (btnRight) {
+      btnRight.addEventListener('click', (e) => {
+        e.preventDefault();
+        container.scrollTo({ 
+          left: container.scrollLeft + 400, 
+          behavior: 'smooth' 
+        });
+      });
+    }
+
+    // Auto-scroll logic: slowly scroll when not hovered
+    let isHovered = false;
+    container.addEventListener('mouseenter', () => isHovered = true);
+    container.addEventListener('mouseleave', () => isHovered = false);
+    
+    // Also pause on button hover
+    if (btnLeft) {
+      btnLeft.addEventListener('mouseenter', () => isHovered = true);
+      btnLeft.addEventListener('mouseleave', () => isHovered = false);
+    }
+    if (btnRight) {
+      btnRight.addEventListener('mouseenter', () => isHovered = true);
+      btnRight.addEventListener('mouseleave', () => isHovered = false);
+    }
+
+    setInterval(() => {
+      if (!isHovered && container.scrollWidth > container.clientWidth) {
+        // If we are near the end, go back to start
+        if (Math.ceil(container.scrollLeft + container.clientWidth) >= container.scrollWidth - 10) {
+          container.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          // Scroll by a fixed amount (e.g., 400px) every 3 seconds
+          container.scrollBy({ left: 400, behavior: 'smooth' });
+        }
+      }
+    }, 3000);
+  });
+
+  // Flash Sale Timer
+  const timerH = document.getElementById('timer-h');
+  const timerM = document.getElementById('timer-m');
+  const timerS = document.getElementById('timer-s');
+
+  if (timerH && timerM && timerS) {
+    let hours = 2, minutes = 45, seconds = 12;
+    setInterval(() => {
+      seconds--;
+      if (seconds < 0) { seconds = 59; minutes--; }
+      if (minutes < 0) { minutes = 59; hours--; }
+      if (hours < 0) { hours = 23; }
+      
+      timerH.textContent = hours.toString().padStart(2, '0');
+      timerM.textContent = minutes.toString().padStart(2, '0');
+      timerS.textContent = seconds.toString().padStart(2, '0');
+    }, 1000);
+  }
+
+  // Load More Products (Gợi ý hôm nay)
+  const btnLoadMore = document.getElementById('btn-load-more');
+  const suggestionContainer = document.getElementById('suggestion-container');
+
+  if (btnLoadMore && suggestionContainer) {
+    btnLoadMore.addEventListener('click', async function() {
+      const page = parseInt(this.getAttribute('data-page'));
+      const nextPage = page + 1;
+      
+      this.disabled = true;
+      this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang tải...';
+      
+      try {
+        const response = await fetch(`/weblaptop/load_more_products.php?page=${nextPage}`);
+        const html = await response.text();
+        
+        if (html.trim() === '') {
+          this.innerHTML = 'Hết sản phẩm';
+          this.classList.add('disabled');
+          return;
+        }
+        
+        suggestionContainer.insertAdjacentHTML('beforeend', html);
+        this.setAttribute('data-page', nextPage);
+        this.disabled = false;
+        this.innerHTML = 'Xem thêm';
+      } catch (error) {
+        console.error('Error loading more products:', error);
+        this.disabled = false;
+        this.innerHTML = 'Thử lại';
+      }
+    });
+  }
 });
