@@ -50,12 +50,17 @@ $shipping_fee = 30000;
 
 // Voucher logic
 $discount = 0;
+$shipping_discount = 0;
 $voucher = $_SESSION["voucher"] ?? null;
 if ($voucher) {
     // Re-validate voucher
     $v = getVoucherByCode($voucher["code"]);
-    if ($v && $subtotal >= $v["min_order_value"]) {
-        $discount = calculateDiscount($v, $subtotal);
+    if ($v && $subtotal >= $v["min_spend"]) {
+        if ($v['discount_type'] === 'shipping') {
+            $shipping_discount = calculateDiscount($v, $subtotal, $shipping_fee);
+        } else {
+            $discount = calculateDiscount($v, $subtotal, $shipping_fee);
+        }
         $voucher = $v; // Update with latest data
     } else {
         unset($_SESSION["voucher"]);
@@ -63,7 +68,7 @@ if ($voucher) {
     }
 }
 
-$total = $subtotal + $shipping_fee - $discount;
+$total = $subtotal + $shipping_fee - $discount - $shipping_discount;
 
 // Fetch user addresses
 $addresses = getUserAddresses($user_id);
@@ -82,9 +87,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $orderData = [
             "user_id" => $user_id,
             "address_id" => $address_id,
+            "voucher_id" => $voucher ? $voucher['id'] : null,
             "subtotal" => $subtotal,
             "shipping_fee" => $shipping_fee,
+            "shipping_discount" => $shipping_discount,
             "discount" => $discount,
+            "discount_amount" => $discount,
             "total" => $total,
             "payment_method" => $payment_method,
             "notes" => $notes,
@@ -109,147 +117,297 @@ require_once __DIR__ . "/includes/header.php";
 ?>
 
 <style>
-    body { background-color: #f5f5f5; }
-    .checkout-section { background: #fff; padding: 25px; margin-bottom: 15px; box-shadow: 0 1px 1px rgba(0,0,0,.05); border-radius: 3px; }
-    .address-border { height: 3px; width: 100%; background-position-x: -30px; background-size: 116px 3px; background-image: repeating-linear-gradient(45deg,#6fa6d6,#6fa6d6 33px,transparent 0,transparent 41px,#f18d9b 0,#f18d9b 74px,transparent 0,transparent 82px); }
-    .section-title { color: #ee4d2d; font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; }
-    .section-title i { margin-right: 10px; font-size: 20px; }
-    .product-table th { background: #fafafa; font-weight: 400; color: #888; border: none; }
-    .product-img { width: 40px; height: 40px; object-fit: cover; margin-right: 10px; }
-    .payment-option { border: 1px solid rgba(0,0,0,.09); padding: 10px 20px; margin-right: 10px; cursor: pointer; border-radius: 2px; display: inline-block; }
-    .payment-option.active { border-color: #ee4d2d; color: #ee4d2d; position: relative; }
-    .payment-option.active::after { content: ""; position: absolute; right: 0; bottom: 0; background: #ee4d2d; color: #fff; font-size: 10px; padding: 0 2px; }
-    .summary-row { display: flex; justify-content: flex-end; padding: 10px 0; color: rgba(0,0,0,.54); }
-    .summary-label { width: 200px; text-align: right; padding-right: 20px; }
-    .summary-value { width: 150px; text-align: right; color: rgba(0,0,0,.8); }
-    .total-value { color: #ee4d2d; font-size: 24px; }
-    .btn-order { background: #ee4d2d; color: #fff; padding: 12px 60px; border: none; border-radius: 2px; font-size: 16px; transition: background 0.2s; }
-    .btn-order:hover { background: #f05d40; color: #fff; }
+    :root {
+        --tet-red: #d32f2f;
+        --tet-gold: #ffc107;
+        --tet-bg: #f8f9fa;
+    }
+    body { background-color: var(--tet-bg); }
+    .checkout-container { max-width: 1000px; margin: 0 auto; }
+    .checkout-section { 
+        background: #fff; 
+        padding: 25px; 
+        margin-bottom: 20px; 
+        border-radius: 12px; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    .address-border { 
+        height: 4px; 
+        width: 100%; 
+        background-position-x: -30px; 
+        background-size: 116px 4px; 
+        background-image: repeating-linear-gradient(45deg, #d32f2f, #d32f2f 33px, transparent 0, transparent 41px, #ffc107 0, #ffc107 74px, transparent 0, transparent 82px); 
+    }
+    .section-title { 
+        color: var(--tet-red); 
+        font-size: 1.1rem; 
+        font-weight: 700;
+        margin-bottom: 20px; 
+        display: flex; 
+        align-items: center; 
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .section-title i { margin-right: 10px; font-size: 1.2rem; }
+    
+    .product-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .product-item:last-child { border-bottom: none; }
+    .product-img { 
+        width: 70px; 
+        height: 70px; 
+        object-fit: cover; 
+        border-radius: 8px;
+        margin-right: 15px;
+        border: 1px solid #eee;
+    }
+    .product-info { flex: 1; }
+    .product-name { font-weight: 500; color: #333; margin-bottom: 4px; }
+    .product-meta { font-size: 0.85rem; color: #777; }
+    .product-price-qty { text-align: right; }
+    .product-price { font-weight: 600; color: var(--tet-red); }
+    
+    .payment-option { 
+        border: 2px solid #eee; 
+        padding: 15px 20px; 
+        margin-bottom: 10px; 
+        cursor: pointer; 
+        border-radius: 10px; 
+        display: flex;
+        align-items: center;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    .payment-option:hover { border-color: var(--tet-gold); background: #fffdf5; }
+    .payment-option.active { 
+        border-color: var(--tet-red); 
+        background: #fff5f5; 
+    }
+    .payment-option i { font-size: 1.5rem; margin-right: 15px; color: #555; }
+    .payment-option.active i { color: var(--tet-red); }
+    .payment-option.active::after { 
+        content: "\f058"; 
+        font-family: "Font Awesome 5 Free"; 
+        font-weight: 900;
+        position: absolute; 
+        right: 15px; 
+        color: var(--tet-red); 
+        font-size: 1.2rem;
+    }
+
+    .summary-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 25px;
+        position: sticky;
+        top: 100px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; color: #555; }
+    .summary-total { 
+        display: flex; 
+        justify-content: space-between; 
+        margin-top: 15px; 
+        padding-top: 15px; 
+        border-top: 2px dashed #eee;
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: var(--tet-red);
+    }
+    .btn-order { 
+        background: var(--tet-red); 
+        color: #fff; 
+        width: 100%;
+        padding: 15px; 
+        border: none; 
+        border-radius: 10px; 
+        font-size: 1.1rem; 
+        font-weight: 700;
+        margin-top: 20px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3);
+    }
+    .btn-order:hover { 
+        background: #b71c1c; 
+        color: #fff; 
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(211, 47, 47, 0.4);
+    }
+    
+    .address-item {
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .address-item:hover { border-color: var(--tet-gold); }
+    .address-item.active { border-color: var(--tet-red); background: #fff5f5; }
 </style>
 
-<div class="container py-4">
-    <form method="POST" id="checkout-form">
-        <!-- Address Section -->
-        <div class="checkout-section p-0 overflow-hidden">
-            <div class="address-border"></div>
-            <div class="p-4">
-                <div class="section-title">
-                    <span class="sparkle-effect"></span> Địa Chỉ Nhận Hàng
-                </div>
-                <?php if (empty($addresses)): ?>
-                    <div class="d-flex align-items-center justify-content-between">
-                        <span class="text-muted">Bạn chưa có địa chỉ giao hàng.</span>
-                        <a href="account.php" class="btn btn-outline-primary btn-sm">Thêm địa chỉ mới</a>
-                    </div>
-                <?php else: ?>
-                    <?php foreach ($addresses as $addr): ?>
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="radio" name="address_id" id="addr-<?php echo $addr["id"]; ?>" value="<?php echo $addr["id"]; ?>" <?php echo $addr["is_default"] ? "checked" : ""; ?>>
-                            <label class="form-check-label ms-2" for="addr-<?php echo $addr["id"]; ?>">
-                                <strong><?php echo htmlspecialchars($addr["recipient_name"]); ?> <?php echo htmlspecialchars($addr["phone"]); ?></strong>
-                                <span class="ms-3 text-muted"><?php echo htmlspecialchars($addr["address_line1"]); ?>, <?php echo htmlspecialchars($addr["district"]); ?>, <?php echo htmlspecialchars($addr["city"]); ?></span>
-                                <?php if ($addr["is_default"]): ?>
-                                    <span class="badge border border-danger text-danger ms-2">Mặc định</span>
-                                <?php endif; ?>
-                            </label>
-                        </div>
-                    <?php endforeach; ?>
-                    <div class="mt-2">
-                        <a href="account.php" class="text-primary text-decoration-none small">Thay đổi</a>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <!-- Products Section -->
-        <div class="checkout-section">
-            <table class="table product-table">
-                <thead>
-                    <tr>
-                        <th style="width: 50%;">Sản phẩm</th>
-                        <th class="text-center">Đơn giá</th>
-                        <th class="text-center">Số lượng</th>
-                        <th class="text-end">Thành tiền</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($items as $it): ?>
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="<?php echo htmlspecialchars($it["image"]); ?>" class="product-img">
-                                    <span class="text-truncate" style="max-width: 400px;"><?php echo htmlspecialchars($it["name"]); ?></span>
+<div class="container py-5">
+    <div class="checkout-container">
+        <h2 class="mb-4 fw-bold text-center"><i class="fas fa-check-circle text-success me-2"></i>Xác Nhận Thanh Toán</h2>
+        
+        <form method="POST" id="checkout-form">
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Address Section -->
+                    <div class="checkout-section p-0 overflow-hidden">
+                        <div class="address-border"></div>
+                        <div class="p-4">
+                            <div class="section-title">
+                                <i class="fas fa-map-marker-alt"></i> Địa Chỉ Nhận Hàng
+                            </div>
+                            <?php if (empty($addresses)): ?>
+                                <div class="text-center py-3">
+                                    <p class="text-muted mb-3">Bạn chưa có địa chỉ giao hàng.</p>
+                                    <a href="account.php" class="btn btn-outline-danger rounded-pill px-4">
+                                        <i class="fas fa-plus me-2"></i>Thêm địa chỉ mới
+                                    </a>
                                 </div>
-                            </td>
-                            <td class="text-center text-muted"><?php echo number_format($it["price"], 0, ",", "."); ?> đ</td>
-                            <td class="text-center text-muted"><?php echo $it["quantity"]; ?></td>
-                            <td class="text-end"><?php echo number_format($it["item_subtotal"], 0, ",", "."); ?> đ</td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-            
-            <div class="d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
-                <div class="flex-grow-1 me-5">
-                    <input type="text" name="notes" class="form-control form-control-sm" placeholder="Lưu ý cho người bán...">
-                </div>
-                <div class="text-muted small">Đơn vị vận chuyển: <span class="text-success fw-bold">Nhanh</span></div>
-                <div class="ms-5 text-end">
-                    <div class="text-primary"><?php echo number_format($shipping_fee, 0, ",", "."); ?> đ</div>
-                    <div class="text-muted small">Nhận hàng vào 2-3 ngày tới</div>
-                </div>
-            </div>
-        </div>
+                            <?php else: ?>
+                                <?php foreach ($addresses as $addr): ?>
+                                    <div class="address-item <?php echo $addr["is_default"] ? "active" : ""; ?>" onclick="document.getElementById('addr-<?php echo $addr["id"]; ?>').checked = true; updateAddressStyle(this)">
+                                        <div class="form-check">
+                                            <input class="form-check-input d-none" type="radio" name="address_id" id="addr-<?php echo $addr["id"]; ?>" value="<?php echo $addr["id"]; ?>" <?php echo $addr["is_default"] ? "checked" : ""; ?>>
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <div class="fw-bold mb-1">
+                                                        <?php echo htmlspecialchars($addr["recipient_name"]); ?> 
+                                                        <span class="text-muted fw-normal ms-2">| <?php echo htmlspecialchars($addr["phone"]); ?></span>
+                                                    </div>
+                                                    <div class="text-muted small">
+                                                        <?php echo htmlspecialchars($addr["address_line1"]); ?>, <?php echo htmlspecialchars($addr["district"]); ?>, <?php echo htmlspecialchars($addr["city"]); ?>
+                                                    </div>
+                                                    <?php if ($addr["is_default"]): ?>
+                                                        <span class="badge bg-danger mt-2" style="font-size: 0.7rem;">MẶC ĐỊNH</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <a href="account.php" class="text-primary small">Thay đổi</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
 
-        <!-- Voucher Section -->
-        <div class="checkout-section">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="section-title mb-0">
-                    <span class="sparkle-effect text-danger"></span> GrowTech Voucher
-                </div>
-                <div class="d-flex align-items-center">
-                    <?php if ($voucher): ?>
-                        <span class="text-danger me-3">-<?php echo number_format($discount, 0, ",", "."); ?> đ (<?php echo htmlspecialchars($voucher["code"]); ?>)</span>
-                    <?php endif; ?>
-                    <a href="cart.php" class="text-primary text-decoration-none small">Thay đổi</a>
-                </div>
-            </div>
-        </div>
+                    <!-- Products Section -->
+                    <div class="checkout-section">
+                        <div class="section-title">
+                            <i class="fas fa-shopping-bag"></i> Sản Phẩm Đã Chọn
+                        </div>
+                        <div class="product-list">
+                            <?php foreach ($items as $it): ?>
+                                <div class="product-item">
+                                    <img src="<?php echo htmlspecialchars($it["image"]); ?>" class="product-img">
+                                    <div class="product-info">
+                                        <div class="product-name text-truncate" style="max-width: 300px;"><?php echo htmlspecialchars($it["name"]); ?></div>
+                                        <div class="product-meta">Số lượng: <?php echo $it["quantity"]; ?></div>
+                                    </div>
+                                    <div class="product-price-qty">
+                                        <div class="product-price"><?php echo number_format($it["item_subtotal"], 0, ",", "."); ?> đ</div>
+                                        <div class="text-muted small"><?php echo number_format($it["price"], 0, ",", "."); ?> đ / cái</div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        
+                        <div class="mt-4 pt-3 border-top">
+                            <div class="row align-items-center">
+                                <div class="col-md-7">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light border-end-0"><i class="far fa-sticky-note text-muted"></i></span>
+                                        <input type="text" name="notes" class="form-control border-start-0 bg-light" placeholder="Lưu ý cho người bán (tùy chọn)...">
+                                    </div>
+                                </div>
+                                <div class="col-md-5 text-end mt-3 mt-md-0">
+                                    <div class="small text-muted">Đơn vị vận chuyển: <span class="text-dark fw-bold">Giao Hàng Nhanh <i class="fas fa-shipping-fast text-primary ms-1"></i></span></div>
+                                    <div class="small text-success">Dự kiến nhận hàng sau 2-3 ngày</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-        <!-- Payment Section -->
-        <div class="checkout-section">
-            <div class="section-title mb-4">Phương thức thanh toán</div>
-            <div class="mb-4">
-                <div class="payment-option active" onclick="selectPayment(this, 'tien_mat')">Thanh toán khi nhận hàng (COD)</div>
-                <div class="payment-option" onclick="selectPayment(this, 'chuyen_khoan')">Chuyển khoản ngân hàng</div>
-                <input type="hidden" name="payment_method" id="payment_method" value="tien_mat">
-            </div>
+                    <!-- Payment Section -->
+                    <div class="checkout-section">
+                        <div class="section-title">
+                            <i class="fas fa-credit-card"></i> Phương Thức Thanh Toán
+                        </div>
+                        <div class="payment-options">
+                            <div class="payment-option active" onclick="selectPayment(this, 'tien_mat')">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <div>
+                                    <div class="fw-bold">Thanh toán khi nhận hàng (COD)</div>
+                                    <div class="small text-muted">Thanh toán bằng tiền mặt khi nhận hàng</div>
+                                </div>
+                            </div>
+                            <div class="payment-option" onclick="selectPayment(this, 'chuyen_khoan')">
+                                <i class="fas fa-university"></i>
+                                <div>
+                                    <div class="fw-bold">Chuyển khoản ngân hàng</div>
+                                    <div class="small text-muted">Chuyển khoản qua ứng dụng ngân hàng hoặc ATM</div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="payment_method" id="payment_method" value="tien_mat">
+                        </div>
+                    </div>
+                </div>
 
-            <div class="bg-light p-4">
-                <div class="summary-row">
-                    <div class="summary-label">Tổng tiền hàng</div>
-                    <div class="summary-value"><?php echo number_format($subtotal, 0, ",", "."); ?> đ</div>
-                </div>
-                <div class="summary-row">
-                    <div class="summary-label">Phí vận chuyển</div>
-                    <div class="summary-value"><?php echo number_format($shipping_fee, 0, ",", "."); ?> đ</div>
-                </div>
-                <?php if ($discount > 0): ?>
-                <div class="summary-row">
-                    <div class="summary-label">Giảm giá voucher</div>
-                    <div class="summary-value">-<?php echo number_format($discount, 0, ",", "."); ?> đ</div>
-                </div>
-                <?php endif; ?>
-                <div class="summary-row">
-                    <div class="summary-label">Tổng thanh toán</div>
-                    <div class="summary-value total-value"><?php echo number_format($total, 0, ",", "."); ?> đ</div>
-                </div>
-                <div class="d-flex justify-content-end mt-4 pt-4 border-top">
-                    <button type="submit" class="btn-order">Đặt hàng</button>
+                <div class="col-lg-4">
+                    <div class="summary-card">
+                        <h5 class="fw-bold mb-4">Tổng Đơn Hàng</h5>
+                        
+                        <div class="summary-row">
+                            <span>Tạm tính (<?php echo count($items); ?> sản phẩm)</span>
+                            <span><?php echo number_format($subtotal, 0, ",", "."); ?> đ</span>
+                        </div>
+                        
+                        <div class="summary-row">
+                            <span>Phí vận chuyển</span>
+                            <span><?php echo number_format($shipping_fee, 0, ",", "."); ?> đ</span>
+                        </div>
+
+                        <?php if ($discount > 0): ?>
+                            <div class="summary-row text-danger">
+                                <span>Giảm giá Voucher</span>
+                                <span>-<?php echo number_format($discount, 0, ",", "."); ?> đ</span>
+                            </div>
+                            <div class="small text-muted mb-3 text-end">
+                                <i class="fas fa-ticket-alt me-1"></i> Mã: <?php echo htmlspecialchars($voucher["code"]); ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="summary-total">
+                            <span>Tổng cộng</span>
+                            <span><?php echo number_format($total, 0, ",", "."); ?> đ</span>
+                        </div>
+                        
+                        <div class="text-muted small mt-3 text-center">
+                            <i class="fas fa-shield-alt text-success me-1"></i> Thanh toán an toàn & bảo mật
+                        </div>
+
+                        <button type="submit" class="btn-order">
+                            ĐẶT HÀNG NGAY
+                        </button>
+                        
+                        <div class="text-center mt-3">
+                            <a href="cart.php" class="text-decoration-none small text-muted">
+                                <i class="fas fa-arrow-left me-1"></i> Quay lại giỏ hàng
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 
 <script>
@@ -258,6 +416,12 @@ function selectPayment(el, method) {
     el.classList.add("active");
     document.getElementById("payment_method").value = method;
 }
+
+function updateAddressStyle(el) {
+    document.querySelectorAll(".address-item").forEach(item => item.classList.remove("active"));
+    el.classList.add("active");
+}
 </script>
 
 <?php require_once __DIR__ . "/includes/footer.php"; ?>
+
