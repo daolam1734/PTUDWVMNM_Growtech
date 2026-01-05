@@ -12,6 +12,7 @@ require_once __DIR__ . "/../functions.php";
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <link href="/weblaptop/assets/css/style.css" rel="stylesheet">
   <style>
+    body { margin: 0 !important; padding: 0 !important; }
     :root { 
       --tet-red: #d32f2f; 
       --tet-gold: #ffc107;
@@ -20,26 +21,73 @@ require_once __DIR__ . "/../functions.php";
     }
     .tet-header { 
       background: linear-gradient(135deg, #c62828, #8e0000); 
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"), linear-gradient(135deg, #c62828, #8e0000);
       color: #fff; 
       border-bottom: 4px solid var(--tet-gold);
-      position: relative;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: all 0.3s ease;
+    }
+    .header-spacer {
+      height: 170px;
+    }
+    @media (max-width: 991px) {
+      .header-spacer { height: 110px; }
+    }
+    .tet-header.shrink {
+      padding-bottom: 8px !important;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.4);
+    }
+    .tet-header.shrink .nav-top {
+      display: none !important;
+    }
+    .tet-header.shrink .logo-text {
+      font-size: 1.4rem !important;
+    }
+    .tet-header.shrink .slogan, .tet-header.shrink .tet-2026-badge, .tet-header.shrink .main-menu-nav {
+      display: none !important;
+    }
+    .tet-header.shrink .mt-3 {
+      margin-top: 8px !important;
+    }
+    .tet-header.shrink .search-bar-container {
+      height: 38px;
+      margin: 0 30px;
     }
     .tet-header a { color: #fff; text-decoration: none; font-size: 13px; transition: color 0.2s; }
     .tet-header a:hover { color: var(--tet-gold); }
     .search-bar-container { 
       background: #fff; 
-      border-radius: 2px; 
-      padding: 2px; 
+      border-radius: 4px; 
+      padding: 0; 
       display: flex; 
       flex-grow: 1; 
-      margin: 0 40px; 
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      border: 2px solid var(--tet-red); /* Add a red border to make it pop */
+      margin: 0 60px; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      border: 2px solid var(--tet-gold);
+      overflow: hidden;
+      height: 45px;
     }
-    .search-input { border: none; flex-grow: 1; padding: 8px 15px; outline: none; color: #333; font-size: 14px; }
-    .search-input::placeholder { color: #bbb; }
-    .search-btn { background: var(--tet-red); color: #fff; border: none; padding: 0 25px; border-radius: 0; transition: all 0.2s; font-size: 18px; }
+    .search-input { border: none; flex-grow: 1; padding: 0 20px; outline: none; color: #333; font-size: 15px; height: 100%; }
+    .search-input::placeholder { color: #999; }
+    .search-btn { 
+      background: var(--tet-red); 
+      color: #fff; 
+      border: none; 
+      padding: 0 30px; 
+      border-radius: 0; 
+      transition: all 0.2s; 
+      font-size: 14px; 
+      font-weight: 700;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .search-btn:hover { background: #b71c1c; }
     .cart-icon { font-size: 26px; position: relative; margin-left: 15px; color: #fff !important; transition: transform 0.2s; }
     .cart-icon:hover { transform: scale(1.05); }
@@ -65,42 +113,70 @@ require_once __DIR__ . "/../functions.php";
       right: 0;
       width: 400px;
       background: #fff;
-      border-radius: 4px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+      border-radius: 12px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
       display: none;
       z-index: 1500;
       padding: 0;
-      border: 1px solid #eee;
+      border: none;
+      border-top: 3px solid var(--tet-gold);
+      margin-top: 10px;
+      animation: fadeIn 0.2s ease-out;
     }
     #header-cart-dropdown.show { display: block; }
-    .cart-dropdown-header { padding: 12px; color: #999; font-size: 14px; border-bottom: 1px solid #f5f5f5; }
+    .cart-dropdown-header { padding: 15px; color: #000; font-weight: 700; font-size: 15px; border-bottom: 1px solid #f5f5f5; }
     .cart-dropdown-body { max-height: 350px; overflow-y: auto; }
     .cart-dropdown-item { 
       display: flex; 
-      padding: 10px; 
+      padding: 12px 15px; 
       text-decoration: none; 
       color: #333 !important; 
       transition: background 0.2s;
       border-bottom: 1px solid #fafafa;
     }
-    .cart-dropdown-item:hover { background: #f8f8f8; }
-    .cart-dropdown-item img { width: 45px; height: 45px; object-fit: cover; border: 1px solid #eee; margin-right: 10px; }
+    .cart-dropdown-item:hover { background: rgba(211, 47, 47, 0.03); }
+    .cart-dropdown-item img { width: 50px; height: 50px; object-fit: cover; border: 1px solid #eee; margin-right: 12px; border-radius: 4px; }
     .cart-dropdown-info { flex: 1; min-width: 0; }
-    .cart-dropdown-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; color: #333; }
-    .cart-dropdown-price { color: var(--tet-red); font-weight: 600; font-size: 13px; }
+    .cart-dropdown-name { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; color: #333; font-weight: 500; }
+    .cart-dropdown-price { color: var(--tet-red); font-weight: 700; font-size: 14px; }
     .cart-dropdown-footer { padding: 12px; background: #fdfdfd; text-align: right; border-top: 1px solid #f5f5f5; }
     .btn-view-cart { background: var(--tet-red); color: #fff !important; padding: 8px 15px; border-radius: 2px; font-size: 13px; text-decoration: none; display: inline-block; }
     .btn-view-cart:hover { background: #ee4d2d; }
     .nav-top { font-size: 13px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.15); }
     .logo-text { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; letter-spacing: 1px; text-shadow: 2px 2px 4px rgba(0,0,0,0.4); }
     .slogan { font-size: 0.85rem; color: var(--tet-gold); font-style: italic; margin-top: -5px; font-weight: 500; }
-    .tet-decoration { position: absolute; pointer-events: none; opacity: 0.25; font-size: 2.2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+    .tet-decoration { position: absolute; pointer-events: none; opacity: 0.4; font-size: 2.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); z-index: 10; }
+    .tet-2026-badge {
+      background: linear-gradient(45deg, var(--tet-gold), #fff);
+      color: var(--tet-red);
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-left: 10px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+      border: 1px solid #fff;
+      animation: badge-glow 2s infinite alternate;
+    }
+    @keyframes badge-glow {
+      from { box-shadow: 0 0 5px var(--tet-gold); }
+      to { box-shadow: 0 0 15px var(--tet-gold); }
+    }
+    .hotline-box {
+      background: rgba(255,255,255,0.1);
+      padding: 4px 12px;
+      border-radius: 50px;
+      border: 1px solid rgba(255,255,255,0.2);
+      font-weight: 600;
+    }
+    .hotline-box i { color: var(--tet-gold); }
     
     #search-suggestions {
       position: absolute; z-index: 1200; left: 0; right: 0; top: 100%; background: #fff; border: 1px solid #ddd; border-radius: 0 0 15px 15px; display: none; max-height: 450px; overflow: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.15); margin-top: 5px;
     }
     #search-suggestions.show { display: block; }
-    .suggestion-item { text-decoration: none; color: #333; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; }
+    .suggestion-item { text-decoration: none; color: #000; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; }
     .suggestion-item:hover, .suggestion-item.active { background: #fff8f8; color: var(--tet-red); }
     .suggestion-item img { border-radius: 4px; border: 1px solid #eee; }
 
@@ -130,68 +206,170 @@ require_once __DIR__ . "/../functions.php";
     .main-menu-nav {
       background: rgba(0, 0, 0, 0.15);
       border-radius: 8px;
-      margin-top: 15px;
-      padding: 0 10px;
+      margin-top: 12px;
+      padding: 0;
       border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(5px);
     }
     .main-menu-nav .nav-link {
       color: #fff !important;
       font-weight: 600;
-      padding: 12px 18px !important;
+      padding: 12px 20px !important;
       text-transform: uppercase;
       font-size: 13px;
       transition: all 0.3s;
       letter-spacing: 0.5px;
+      position: relative;
+    }
+    .main-menu-nav .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: var(--tet-gold);
+      transition: all 0.3s;
+      transform: translateX(-50%);
+    }
+    .main-menu-nav .nav-link:hover::after {
+      width: 30px;
     }
     .main-menu-nav .nav-link:hover {
       color: var(--tet-gold) !important;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
     }
-    .dropdown-menu {
-      border: none;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      border-radius: 8px;
-      padding: 10px 0;
-    }
-    .dropdown-item {
-      font-size: 14px;
-      padding: 8px 20px;
-      transition: all 0.2s;
-      color: #333; /* Ensure black text */
-    }
-    .dropdown-item:hover {
-      background-color: #f8f9fa;
-      color: var(--tet-red);
-      padding-left: 22px;
-    }
-    .dropdown-submenu {
-      position: relative;
-    }
-    .dropdown-submenu .dropdown-menu {
-      top: 0;
-      left: 100%;
-      margin-top: -1px;
-    }
-    .megamenu {
-      position: static !important;
-    }
+    .megamenu { position: static !important; }
     .megamenu .dropdown-menu {
       width: 100%;
       left: 0;
       right: 0;
-      top: auto;
-      padding: 20px;
+      top: 100%;
+      border-radius: 0 0 20px 20px;
+      border: none;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+      padding: 30px 0;
+      background: #fff;
+      margin-top: 0;
+      border-top: 4px solid var(--tet-gold);
+      animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .megamenu-title {
-      font-weight: 800;
       color: var(--tet-red);
-      margin-bottom: 12px;
+      font-weight: 800;
+      font-size: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f8f9fa;
+      display: block;
       text-transform: uppercase;
-      font-size: 13px;
-      border-bottom: 2px solid #f0f0f0;
-      padding-bottom: 8px;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
+      position: relative;
+    }
+    .megamenu-title::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 50px;
+      height: 2px;
+      background: var(--tet-gold);
+    }
+    .megamenu .dropdown-item {
+      padding: 10px 0;
+      font-size: 14px;
+      color: #555 !important;
+      transition: all 0.3s;
+      background: transparent !important;
+      display: flex;
+      align-items: center;
+    }
+    .megamenu .dropdown-item i {
+      font-size: 8px;
+      margin-right: 10px;
+      color: var(--tet-gold);
+      opacity: 0;
+      transition: all 0.3s;
+    }
+    .megamenu .dropdown-item:hover {
+      color: var(--tet-red) !important;
+      padding-left: 15px;
+    }
+    .megamenu .dropdown-item:hover i {
+      opacity: 1;
+    }
+
+    /* General Dropdown Styling */
+    .dropdown-menu {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+      padding: 8px;
+      border-top: 3px solid var(--tet-gold);
+      animation: fadeIn 0.2s ease-out;
+      background-color: #ffffff;
+      z-index: 2000;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .dropdown-item {
+      border-radius: 8px;
+      padding: 10px 15px;
+      font-weight: 500;
+      color: #333 !important;
+      transition: all 0.2s;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+    }
+    .dropdown-item i {
+      font-size: 1.1rem;
+      margin-right: 10px;
+      color: var(--tet-red);
+      width: 20px;
+      text-align: center;
+    }
+    .dropdown-item:hover {
+      background: rgba(211, 47, 47, 0.05);
+      color: var(--tet-red) !important;
+      transform: translateX(5px);
+    }
+    .dropdown-divider {
+      margin: 8px 0;
+      border-top: 1px solid #f0f0f0;
+    }
+    .dropdown-item.text-danger {
+      color: #d32f2f !important;
+      font-weight: 700;
+    }
+    .dropdown-item.text-danger:hover {
+      background: rgba(211, 47, 47, 0.1);
+    }
+    
+    /* Megamenu specific overrides */
+    .megamenu .dropdown-menu {
+      width: 100%;
+      left: 0;
+      right: 0;
+      top: 100%;
+      border-radius: 0 0 20px 20px;
+      padding: 30px 0;
+      animation: slideUp 0.3s ease-out;
+    }
+    
+    /* Pulse animation for Lì xì */
+    @keyframes pulse-gold {
+      0% { transform: scale(1); text-shadow: 0 0 0 rgba(255, 193, 7, 0); }
+      50% { transform: scale(1.05); text-shadow: 0 0 10px rgba(255, 193, 7, 0.5); }
+      100% { transform: scale(1); text-shadow: 0 0 0 rgba(255, 193, 7, 0); }
+    }
+    .nav-link.text-warning {
+      animation: pulse-gold 2s infinite ease-in-out;
     }
   </style>
 </head>
@@ -199,32 +377,46 @@ require_once __DIR__ . "/../functions.php";
 
 <header class="tet-header pb-3">
   <!-- Decorative elements -->
-  <div class="tet-decoration" style="top: 10px; left: 5%;">🌸</div>
-  <div class="tet-decoration" style="bottom: 10px; right: 5%;">🧧</div>
+  <div class="tet-decoration" style="top: 10px; left: 2%;">🏮</div>
+  <div class="tet-decoration" style="top: 60px; left: 4%; font-size: 1.5rem;">🌸</div>
+  <div class="tet-decoration" style="top: 10px; right: 2%;">🏮</div>
+  <div class="tet-decoration" style="top: 60px; right: 4%; font-size: 1.5rem;">🌼</div>
+  <div class="tet-decoration" style="bottom: 10px; left: 10%; font-size: 1.2rem;">🧧</div>
+  <div class="tet-decoration" style="bottom: 10px; right: 10%; font-size: 1.2rem;">✨</div>
+  <div class="tet-decoration" style="top: 40%; left: 1%; font-size: 1.8rem; opacity: 0.3;">🐎</div>
+  <div class="tet-decoration" style="top: 40%; right: 1%; font-size: 1.8rem; opacity: 0.3;">🐎</div>
 
   <div class="container">
     <!-- Top Nav -->
-    <div class="d-flex justify-content-between nav-top">
-      <div class="d-flex gap-3">
-        <a href="/weblaptop/admin/dashboard.php"><span class="sparkle-effect"></span> Quản trị</a>
-        <a href="#"><span class="sparkle-effect"></span> Tải ứng dụng</a>
-        <a href="#">Kết nối <span class="sparkle-effect"></span> <span class="sparkle-effect"></span></a>
+    <div class="d-flex justify-content-between nav-top align-items-center">
+      <div class="d-flex gap-3 align-items-center">
+        <a href="#"><i class="bi bi-phone me-1"></i> Tải ứng dụng</a>
+        <div style="width: 1px; height: 12px; background: rgba(255,255,255,.3);"></div>
+        <a href="#">Kết nối <i class="bi bi-facebook ms-1"></i> <i class="bi bi-instagram ms-1"></i></a>
+        <div style="width: 1px; height: 12px; background: rgba(255,255,255,.3);"></div>
+        <div class="hotline-box">
+          <a href="tel:19001234"><i class="bi bi-telephone-fill me-1"></i> Hotline: 1900 1234</a>
+        </div>
       </div>
       <div class="d-flex gap-3 align-items-center">
-        <a href="/weblaptop/notifications.php"><span class="sparkle-effect"></span> Thông Báo</a>
-        <a href="/weblaptop/contact.php"><span class="sparkle-effect"></span> Hỗ Trợ</a>
+        <a href="/weblaptop/notifications.php"><i class="bi bi-bell me-1"></i> Thông Báo</a>
+        <a href="/weblaptop/orders.php"><i class="bi bi-truck me-1"></i> Tra cứu đơn hàng</a>
+        <a href="/weblaptop/contact.php"><i class="bi bi-question-circle me-1"></i> Hỗ Trợ</a>
         <?php if (!empty($_SESSION["user_id"])): ?>
           <div class="dropdown">
-            <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown"><?php echo htmlspecialchars($_SESSION["user_name"] ?? "Tài khoản"); ?></a>
+            <a href="#" class="dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
+              <i class="bi bi-person-circle me-2"></i>
+              <?php echo htmlspecialchars($_SESSION["user_name"] ?? "Tài khoản"); ?>
+            </a>
             <ul class="dropdown-menu dropdown-menu-end">
               <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
-                <li><a class="dropdown-item text-danger fw-bold" href="/weblaptop/admin/dashboard.php">Quản trị hệ thống</a></li>
+                <li><a class="dropdown-item text-danger fw-bold" href="/weblaptop/admin/dashboard.php"><i class="bi bi-speedometer2 me-2"></i> Quản trị hệ thống</a></li>
                 <li><hr class="dropdown-divider"></li>
               <?php endif; ?>
-              <li><a class="dropdown-item" href="/weblaptop/account.php">Hồ sơ</a></li>
-              <li><a class="dropdown-item" href="/weblaptop/orders.php">Đơn mua</a></li>
+              <li><a class="dropdown-item" href="/weblaptop/account.php"><i class="bi bi-person me-2"></i> Hồ sơ</a></li>
+              <li><a class="dropdown-item" href="/weblaptop/orders.php"><i class="bi bi-bag-check me-2"></i> Đơn mua</a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="/weblaptop/auth/logout.php">Đăng xuất</a></li>
+              <li><a class="dropdown-item" href="/weblaptop/auth/logout.php"><i class="bi bi-box-arrow-right me-2"></i> Đăng xuất</a></li>
             </ul>
           </div>
         <?php else: ?>
@@ -240,14 +432,17 @@ require_once __DIR__ . "/../functions.php";
       <a href="/weblaptop" class="d-flex flex-column text-decoration-none">
         <div class="fs-2 fw-bold d-flex align-items-center logo-text text-white">
           <span class="sparkle-effect me-2 text-warning"></span> GrowTech
+          <span class="tet-2026-badge">Xuân Bính Ngọ 2026</span>
         </div>
-        <span class="slogan">Chuẩn công nghệ – vững niềm tin</span>
+        <span class="slogan">Mã Đáo Thành Công – Vững Niềm Tin Công Nghệ</span>
       </a>
       
       <div class="search-bar-container" id="header-search">
-        <form action="/weblaptop/search.php" method="get" class="d-flex w-100">
-          <input type="text" name="q" id="header-search-input" class="search-input" placeholder="Tìm kiếm sản phẩm công nghệ đón Tết...">
-          <button type="submit" class="search-btn"><i class="bi bi-search"></i></button>
+        <form action="/weblaptop/search.php" method="get" class="d-flex w-100 h-100">
+          <input type="text" name="q" id="header-search-input" class="search-input" placeholder="Bạn cần tìm Laptop gì hôm nay?">
+          <button type="submit" class="search-btn">
+            <i class="bi bi-search me-2"></i> TÌM KIẾM
+          </button>
         </form>
         <div id="search-suggestions"></div>
       </div>
@@ -283,7 +478,7 @@ require_once __DIR__ . "/../functions.php";
               <?php endforeach; ?>
               <div class="dropdown-divider m-0"></div>
               <div class="p-2 text-center" style="background: #f9f9f9;">
-                <div class="small text-muted mb-2"><?php echo count($_SESSION['cart']); ?> sản phẩm mới thêm</div>
+                <div class="small mb-2" style="color: #000;"><?php echo count($_SESSION['cart']); ?> sản phẩm mới thêm</div>
                 <a href="/weblaptop/cart.php" class="btn btn-danger w-100 py-2" style="background-color: var(--tet-red); border: none; font-weight: 600; border-radius: 2px;">Xem Giỏ Hàng</a>
               </div>
             <?php else: ?>
@@ -304,7 +499,7 @@ require_once __DIR__ . "/../functions.php";
           <i class="bi bi-list"></i>
         </button>
         <div class="collapse navbar-collapse" id="mainNavbar">
-          <ul class="navbar-nav w-100 justify-content-between">
+          <ul class="navbar-nav w-100 justify-content-center gap-3">
             <li class="nav-item">
               <a class="nav-link" href="/weblaptop/index.php"><i class="bi bi-house-door me-1"></i> Trang chủ</a>
             </li>
@@ -315,86 +510,41 @@ require_once __DIR__ . "/../functions.php";
                 <div class="container">
                   <div class="row">
                     <div class="col-md-4">
-                      <div class="megamenu-title">Theo hãng</div>
-                      <a class="dropdown-item" href="/weblaptop/search.php?q=Dell">Dell</a>
-                      <a class="dropdown-item" href="/weblaptop/search.php?q=HP">HP</a>
-                      <a class="dropdown-item" href="/weblaptop/search.php?q=Lenovo">Lenovo</a>
-                      <a class="dropdown-item" href="/weblaptop/search.php?q=ASUS">ASUS</a>
-                      <a class="dropdown-item" href="/weblaptop/search.php?q=Acer">Acer</a>
-                      <a class="dropdown-item" href="/weblaptop/search.php?q=Apple">Apple (MacBook)</a>
-                      <a class="dropdown-item" href="/weblaptop/search.php?q=MSI">MSI</a>
+                      <div class="megamenu-title">Thương hiệu</div>
+                      <a class="dropdown-item" href="/weblaptop/index.php?brand=Dell"><i class="bi bi-circle-fill"></i> Dell</a>
+                      <a class="dropdown-item" href="/weblaptop/index.php?brand=HP"><i class="bi bi-circle-fill"></i> HP</a>
+                      <a class="dropdown-item" href="/weblaptop/index.php?brand=Lenovo"><i class="bi bi-circle-fill"></i> Lenovo</a>
+                      <a class="dropdown-item" href="/weblaptop/index.php?brand=ASUS"><i class="bi bi-circle-fill"></i> ASUS</a>
+                      <a class="dropdown-item" href="/weblaptop/index.php?brand=Apple"><i class="bi bi-circle-fill"></i> MacBook</a>
                     </div>
                     <div class="col-md-4">
-                      <div class="megamenu-title">Theo nhu cầu</div>
-                      <a class="dropdown-item" href="/weblaptop/search.php?q=van+phong">Laptop văn phòng</a>
-                      <a class="dropdown-item" href="/weblaptop/search.php?q=sinh+vien">Laptop học sinh – sinh viên</a>
-                      <a class="dropdown-item" href="/weblaptop/search.php?q=do+hoa">Laptop đồ họa – kỹ thuật</a>
-                      <a class="dropdown-item" href="/weblaptop/search.php?q=gaming">Laptop gaming</a>
-                      <a class="dropdown-item" href="/weblaptop/search.php?q=cao+cap">Laptop mỏng nhẹ – cao cấp</a>
+                      <div class="megamenu-title">Nhu cầu sử dụng</div>
+                      <a class="dropdown-item" href="/weblaptop/index.php?q=gaming"><i class="bi bi-circle-fill"></i> Laptop Gaming</a>
+                      <a class="dropdown-item" href="/weblaptop/index.php?q=van+phong"><i class="bi bi-circle-fill"></i> Văn phòng - Học tập</a>
+                      <a class="dropdown-item" href="/weblaptop/index.php?q=do+hoa"><i class="bi bi-circle-fill"></i> Đồ họa - Kỹ thuật</a>
+                      <a class="dropdown-item" href="/weblaptop/index.php?q=mong+nhe"><i class="bi bi-circle-fill"></i> Mỏng nhẹ - Cao cấp</a>
                     </div>
                     <div class="col-md-4">
-                      <div class="megamenu-title">Theo mức giá</div>
-                      <a class="dropdown-item" href="/weblaptop/search.php?price_max=10000000">Dưới 10 triệu</a>
-                      <a class="dropdown-item" href="/weblaptop/search.php?price_min=10000000&price_max=15000000">10 – 15 triệu</a>
-                      <a class="dropdown-item" href="/weblaptop/search.php?price_min=15000000&price_max=20000000">15 – 20 triệu</a>
-                      <a class="dropdown-item" href="/weblaptop/search.php?price_min=20000000">Trên 20 triệu</a>
+                      <div class="megamenu-title">Phụ kiện</div>
+                      <a class="dropdown-item" href="/weblaptop/index.php?q=chuot"><i class="bi bi-circle-fill"></i> Chuột máy tính</a>
+                      <a class="dropdown-item" href="/weblaptop/index.php?q=ban+phim"><i class="bi bi-circle-fill"></i> Bàn phím</a>
+                      <a class="dropdown-item" href="/weblaptop/index.php?q=balo"><i class="bi bi-circle-fill"></i> Balo - Túi xách</a>
                     </div>
                   </div>
                 </div>
               </div>
             </li>
 
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Phụ kiện</a>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="/weblaptop/search.php?q=chuot">Chuột</a></li>
-                <li><a class="dropdown-item" href="/weblaptop/search.php?q=ban+phim">Bàn phím</a></li>
-                <li><a class="dropdown-item" href="/weblaptop/search.php?q=tai+nghe">Tai nghe</a></li>
-                <li><a class="dropdown-item" href="/weblaptop/search.php?q=balo">Balo / túi laptop</a></li>
-                <li><a class="dropdown-item" href="/weblaptop/search.php?q=o+cung">Ổ cứng, RAM</a></li>
-              </ul>
-            </li>
-
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Khuyến mãi</a>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">Flash sale</a></li>
-                <li><a class="dropdown-item" href="#">Giảm giá theo hãng</a></li>
-                <li><a class="dropdown-item" href="#">Combo laptop + phụ kiện</a></li>
-              </ul>
-            </li>
-
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Tin tức – Blog</a>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">Tư vấn chọn laptop</a></li>
-                <li><a class="dropdown-item" href="#">So sánh cấu hình</a></li>
-                <li><a class="dropdown-item" href="#">Đánh giá sản phẩm</a></li>
-                <li><a class="dropdown-item" href="#">Tin công nghệ</a></li>
-              </ul>
-            </li>
-
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Hỗ trợ</a>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="/weblaptop/shipping.php">Hướng dẫn mua hàng</a></li>
-                <li><a class="dropdown-item" href="#">Chính sách bảo hành</a></li>
-                <li><a class="dropdown-item" href="/weblaptop/returns.php">Chính sách đổi trả</a></li>
-                <li><a class="dropdown-item" href="#">Câu hỏi thường gặp (FAQ)</a></li>
-              </ul>
-            </li>
-
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Giới thiệu</a>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">Về cửa hàng</a></li>
-                <li><a class="dropdown-item" href="#">Cam kết chất lượng</a></li>
-                <li><a class="dropdown-item" href="#">Hệ thống cửa hàng</a></li>
-              </ul>
+            <li class="nav-item">
+              <a class="nav-link" href="/weblaptop/promotions.php"><i class="bi bi-percent me-1"></i> Khuyến mãi</a>
             </li>
 
             <li class="nav-item">
-              <a class="nav-link" href="/weblaptop/contact.php">Liên hệ</a>
+              <a class="nav-link" href="/weblaptop/news.php"><i class="bi bi-journal-text me-1"></i> Tin tức</a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link" href="/weblaptop/contact.php"><i class="bi bi-envelope me-1"></i> Liên hệ</a>
             </li>
           </ul>
         </div>
@@ -402,6 +552,7 @@ require_once __DIR__ . "/../functions.php";
     </nav>
   </div>
 </header>
+<div class="header-spacer"></div>
 
 <?php if (function_exists("display_flash")) display_flash(); ?>
 

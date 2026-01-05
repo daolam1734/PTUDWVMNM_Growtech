@@ -40,6 +40,17 @@ function getProducts($limit = null) {
     return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 }
 
+function getFlashSaleProducts($limit = 20) {
+    global $pdo;
+    $sql = "SELECT p.*, pi.url as image_url 
+            FROM products p 
+            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.position = 0
+            WHERE p.is_active = 1 AND p.sale_price IS NOT NULL AND p.sale_price < p.price
+            ORDER BY (p.price - p.sale_price) / p.price DESC
+            LIMIT " . (int)$limit;
+    return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+}
+
 function getProductImage($product_id) {
     global $pdo;
     // Simple cache for the same request
@@ -84,21 +95,27 @@ function getVoucherByCode($code) {
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-function calculateDiscount($voucher, $subtotal) {
+function calculateDiscount($voucher, $subtotal, $shipping_fee = 0) {
     if (!$voucher) return 0;
-    if ($subtotal < $voucher['min_order_value']) return 0;
-    if ($voucher['usage_limit'] !== null && $voucher['used_count'] >= $voucher['usage_limit']) return 0;
+    if ($subtotal < $voucher['min_spend']) return 0;
+    if ($voucher['usage_limit'] !== null && $voucher['usage_count'] >= $voucher['usage_limit']) return 0;
 
     $discount = 0;
     if ($voucher['discount_type'] === 'fixed') {
         $discount = $voucher['discount_value'];
-    } else {
+        return min($discount, $subtotal);
+    } elseif ($voucher['discount_type'] === 'percentage') {
         $discount = $subtotal * ($voucher['discount_value'] / 100);
-        if ($voucher['max_discount_amount'] !== null) {
-            $discount = min($discount, $voucher['max_discount_amount']);
+        if ($voucher['max_discount'] !== null) {
+            $discount = min($discount, $voucher['max_discount']);
         }
+        return min($discount, $subtotal);
+    } elseif ($voucher['discount_type'] === 'shipping') {
+        $discount = $voucher['discount_value'];
+        return min($discount, $shipping_fee);
     }
-    return $discount;
+    
+    return 0;
 }
 function isAdmin() {
     return !empty($_SESSION['admin_logged_in']);
@@ -207,24 +224,33 @@ function createOrder($data) {
         $pdo->beginTransaction();
 
         // 1. Insert into orders
-        $stmt = $pdo->prepare("INSERT INTO orders (order_no, user_id, address_id, subtotal, shipping_fee, discount, total, order_status, payment_method, payment_status, notes, created_at) 
-                               VALUES (?, ?, ?, ?, ?, ?, ?, 'dang_cho', ?, 'dang_cho', ?, NOW())");
+        $stmt = $pdo->prepare("INSERT INTO orders (order_no, user_id, address_id, voucher_id, subtotal, shipping_fee, shipping_discount, discount, discount_amount, total, order_status, payment_method, payment_status, notes, created_at) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'dang_cho', ?, 'dang_cho', ?, NOW())");
         
         $order_no = 'WL-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
         $stmt->execute([
             $order_no,
             $data['user_id'],
             $data['address_id'],
+            $data['voucher_id'] ?? null,
             $data['subtotal'],
             $data['shipping_fee'],
+            $data['shipping_discount'] ?? 0,
             $data['discount'],
+            $data['discount_amount'] ?? $data['discount'],
             $data['total'],
             $data['payment_method'],
             $data['notes']
         ]);
         $order_id = $pdo->lastInsertId();
 
-        // 2. Insert into order_items and update stock
+        // 2. Update voucher usage count if applicable
+        if (!empty($data['voucher_id'])) {
+            $stmtVoucher = $pdo->prepare("UPDATE vouchers SET usage_count = usage_count + 1 WHERE id = ?");
+            $stmtVoucher->execute([$data['voucher_id']]);
+        }
+
+        // 3. Insert into order_items and update stock
         $stmtItem = $pdo->prepare("INSERT INTO order_items (order_id, product_id, product_name, sku, quantity, unit_price, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmtStock = $pdo->prepare("UPDATE products SET stock = stock - ? WHERE id = ?");
         $stmtMovement = $pdo->prepare("INSERT INTO stock_movements (product_id, change_qty, type, reference, note) VALUES (?, ?, 'sale', ?, 'Khách đặt hàng')");
@@ -253,6 +279,52 @@ function createOrder($data) {
     } catch (Exception $e) {
         $pdo->rollBack();
         error_log("Order creation failed: " . $e->getMessage());
+        return false;
+    }
+}
+
+function cancelOrder($order_id, $user_id) {
+    global $pdo;
+    try {
+        $pdo->beginTransaction();
+
+        // 1. Fetch order and check ownership/status
+        $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ? AND user_id = ?");
+        $stmt->execute([$order_id, $user_id]);
+        $order = $stmt->fetch();
+
+        if (!$order || $order['order_status'] !== 'dang_cho') {
+            throw new Exception("Đơn hàng không thể hủy.");
+        }
+
+        // 2. Update order status
+        $stmtUpdate = $pdo->prepare("UPDATE orders SET order_status = 'huy' WHERE id = ?");
+        $stmtUpdate->execute([$order_id]);
+
+        // 3. Restore stock and record movement
+        $stmtItems = $pdo->prepare("SELECT * FROM order_items WHERE order_id = ?");
+        $stmtItems->execute([$order_id]);
+        $items = $stmtItems->fetchAll();
+
+        $stmtStock = $pdo->prepare("UPDATE products SET stock = stock + ? WHERE id = ?");
+        $stmtMovement = $pdo->prepare("INSERT INTO stock_movements (product_id, change_qty, type, reference, note) VALUES (?, ?, 'return', ?, 'Khách hủy đơn hàng')");
+
+        foreach ($items as $item) {
+            $stmtStock->execute([$item['quantity'], $item['product_id']]);
+            $stmtMovement->execute([$item['product_id'], $item['quantity'], $order['order_no']]);
+        }
+
+        // 4. Restore voucher usage if applicable
+        if (!empty($order['voucher_id'])) {
+            $stmtVoucher = $pdo->prepare("UPDATE vouchers SET usage_count = GREATEST(0, usage_count - 1) WHERE id = ?");
+            $stmtVoucher->execute([$order['voucher_id']]);
+        }
+
+        $pdo->commit();
+        return true;
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        error_log("Order cancellation failed: " . $e->getMessage());
         return false;
     }
 }

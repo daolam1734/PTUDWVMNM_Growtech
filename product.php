@@ -6,23 +6,6 @@ $id = isset($_GET["id"]) ? (int)$_GET["id"] : 0;
 $product = getProduct($id);
 $specs = getProductSpecs($id);
 
-// handle add to cart
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["quantity"])) {
-    if (!$product) {
-        header("Location: index.php");
-        exit;
-    }
-    $qty = max(1, (int)$_POST["quantity"]);
-    if (!isset($_SESSION["cart"])) $_SESSION["cart"] = [];
-    if (isset($_SESSION["cart"][$id])) {
-        $_SESSION["cart"][$id] += $qty;
-    } else {
-        $_SESSION["cart"][$id] = $qty;
-    }
-    header("Location: cart.php");
-    exit;
-}
-
 require_once __DIR__ . "/includes/header.php";
 
 if (!$product) {
@@ -77,24 +60,91 @@ if (!$product) {
                     </div>
                 </div>
 
-                <form method="post" class="mt-4">
+                <form id="add-to-cart-form" class="mt-4">
+                    <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
                     <div class="row align-items-center mb-4">
                         <div class="col-3 text-muted">Số lượng</div>
                         <div class="col-9 d-flex align-items-center">
-                            <input type="number" name="quantity" value="1" min="1" max="<?php echo (int)$product["stock"]; ?>" class="form-control w-auto me-3">
+                            <div class="input-group w-auto me-3">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="changeQty(-1)">-</button>
+                                <input type="number" name="qty" id="product-qty" value="1" min="1" max="<?php echo (int)$product["stock"]; ?>" class="form-control text-center" style="width: 60px;">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="changeQty(1)">+</button>
+                            </div>
                             <span class="text-muted small"><?php echo (int)$product["stock"]; ?> sản phẩm có sẵn</span>
                         </div>
                     </div>
                     <div class="d-flex gap-3">
-                        <button type="submit" class="btn btn-outline-danger btn-add-cart px-4 py-2">
+                        <button type="button" id="btn-add-cart" class="btn btn-outline-danger btn-add-cart px-4 py-2">
                             <span class="sparkle-effect me-2"></span> Thêm Vào Giỏ Hàng
                         </button>
-                        <button type="submit" class="btn btn-danger btn-buy-now px-5 py-2">Mua Ngay</button>
+                        <button type="button" id="btn-buy-now" class="btn btn-danger btn-buy-now px-5 py-2">Mua Ngay</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <script>
+    function changeQty(delta) {
+        const input = document.getElementById('product-qty');
+        let val = parseInt(input.value) + delta;
+        if (val < 1) val = 1;
+        if (val > <?php echo (int)$product["stock"]; ?>) val = <?php echo (int)$product["stock"]; ?>;
+        input.value = val;
+    }
+
+    document.getElementById('btn-add-cart').addEventListener('click', function() {
+        addToCart(false);
+    });
+
+    document.getElementById('btn-buy-now').addEventListener('click', function() {
+        addToCart(true);
+    });
+
+    function addToCart(redirect) {
+        const btnAdd = document.getElementById('btn-add-cart');
+        const btnBuy = document.getElementById('btn-buy-now');
+        const qty = document.getElementById('product-qty').value;
+        const id = <?php echo $product['id']; ?>;
+
+        btnAdd.disabled = true;
+        btnBuy.disabled = true;
+
+        const formData = new FormData();
+        formData.append('action', 'add');
+        formData.append('id', id);
+        formData.append('qty', qty);
+
+        fetch('cart_api.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Update cart count in header if exists
+                const cartBadge = document.querySelector('.nav-link .badge');
+                if (cartBadge) cartBadge.innerText = data.cart_count;
+
+                if (redirect) {
+                    window.location.href = 'cart.php';
+                } else {
+                    alert(data.message);
+                }
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Có lỗi xảy ra, vui lòng thử lại.');
+        })
+        .finally(() => {
+            btnAdd.disabled = false;
+            btnBuy.disabled = false;
+        });
+    }
+    </script>
 
     <div class="row">
         <div class="col-md-9">

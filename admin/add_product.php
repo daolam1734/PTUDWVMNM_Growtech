@@ -60,86 +60,200 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 require_once __DIR__ . '/includes/header.php';
 ?>
-<div class="container-fluid">
-  <div class="row justify-content-center">
-    <div class="col-md-10">
-      <div class="card shadow-sm">
-        <div class="card-header bg-white py-3">
-          <h4 class="mb-0">Thêm sản phẩm mới</h4>
+
+<div class="admin-wrapper">
+    <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
+    
+    <div class="admin-content">
+        <div class="mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="dashboard.php" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="products.php" class="text-decoration-none">Sản phẩm</a></li>
+                    <li class="breadcrumb-item active">Thêm sản phẩm mới</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold">Thêm sản phẩm mới</h4>
         </div>
-        <div class="card-body">
-          <?php if ($error): ?><div class="alert alert-danger"><?php echo $error; ?></div><?php endif; ?>
-          <form method="post">
-            <div class="row">
-              <div class="col-md-8">
-                <div class="mb-3"><label class="form-label">Tên sản phẩm</label><input class="form-control" name="name" required></div>
-                <div class="row">
-                  <div class="col-md-6">
-                    <div class="mb-3"><label class="form-label">SKU</label><input class="form-control" name="sku"></div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="mb-3"><label class="form-label">Slug (để trống sẽ tự tạo)</label><input class="form-control" name="slug"></div>
-                  </div>
-                </div>
-                <div class="mb-3"><label class="form-label">Mô tả ngắn</label><input class="form-control" name="short_description"></div>
-                <div class="mb-3"><label class="form-label">Mô tả chi tiết</label><textarea class="form-control" name="description" rows="5"></textarea></div>
-                
-                <h5 class="mt-4 mb-3">Thông số kỹ thuật</h5>
-                <div class="row">
-                  <div class="col-md-6">
-                    <div class="mb-3"><label class="form-label">CPU</label><input class="form-control" name="cpu" placeholder="Ví dụ: Intel Core i5-12500H"></div>
-                    <div class="mb-3"><label class="form-label">RAM</label><input class="form-control" name="ram" placeholder="Ví dụ: 16GB DDR4 3200MHz"></div>
-                    <div class="mb-3"><label class="form-label">Ổ cứng</label><input class="form-control" name="storage" placeholder="Ví dụ: 512GB SSD NVMe"></div>
-                    <div class="mb-3"><label class="form-label">Card đồ họa</label><input class="form-control" name="gpu" placeholder="Ví dụ: RTX 3050 4GB"></div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="mb-3"><label class="form-label">Màn hình</label><input class="form-control" name="screen" placeholder="Ví dụ: 15.6 inch FHD 144Hz"></div>
-                    <div class="mb-3"><label class="form-label">Hệ điều hành</label><input class="form-control" name="os" placeholder="Ví dụ: Windows 11 Home"></div>
-                    <div class="mb-3"><label class="form-label">Trọng lượng</label><input class="form-control" name="weight" placeholder="Ví dụ: 2.1 kg"></div>
-                    <div class="mb-3"><label class="form-label">Pin</label><input class="form-control" name="battery" placeholder="Ví dụ: 3-cell, 52.5 Wh"></div>
-                  </div>
-                  <div class="col-12">
-                    <div class="mb-3"><label class="form-label">Cổng kết nối</label><input class="form-control" name="ports" placeholder="Ví dụ: 1x USB-C, 3x USB-A, 1x HDMI"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3"><label class="form-label">Danh mục</label>
-                  <select class="form-select" name="category_id">
-                    <option value="">-- Chọn danh mục --</option>
-                    <?php foreach ($categories as $cat): ?>
-                      <option value="<?php echo $cat['id']; ?>"><?php echo htmlspecialchars($cat['name']); ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div class="mb-3"><label class="form-label">Thương hiệu</label>
-                  <select class="form-select" name="brand_id">
-                    <option value="">-- Chọn thương hiệu --</option>
-                    <?php foreach ($brands as $b): ?>
-                      <option value="<?php echo $b['id']; ?>"><?php echo htmlspecialchars($b['name']); ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div class="mb-3"><label class="form-label">Giá bán</label><input type="number" step="0.01" class="form-control" name="price" required></div>
-                <div class="mb-3"><label class="form-label">Giá khuyến mãi</label><input type="number" step="0.01" class="form-control" name="sale_price"></div>
-                <div class="mb-3"><label class="form-label">Số lượng kho</label><input type="number" class="form-control" name="stock" required></div>
-                <div class="mb-3"><label class="form-label">URL ảnh chính</label><input class="form-control" name="image" placeholder="https://..."></div>
-                <div class="mb-3 form-check">
-                  <input type="checkbox" class="form-check-input" name="is_active" id="is_active" checked>
-                  <label class="form-check-label" for="is_active">Hiển thị sản phẩm</label>
-                </div>
-              </div>
+
+        <?php if ($error): ?>
+            <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4">
+                <i class="bi bi-exclamation-triangle me-2"></i><?php echo $error; ?>
             </div>
-            <hr>
-            <div class="d-flex gap-2">
-              <button class="btn btn-success px-4">Thêm sản phẩm</button>
-              <a href="products.php" class="btn btn-outline-secondary">Quay lại</a>
+        <?php endif; ?>
+
+        <form method="post">
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <!-- Basic Info -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2 text-primary"></i>Thông tin cơ bản</h6>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Tên sản phẩm</label>
+                                <input class="form-control" name="name" placeholder="Nhập tên sản phẩm..." required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">SKU</label>
+                                        <input class="form-control" name="sku" placeholder="Ví dụ: LAP-001">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Slug (để trống sẽ tự tạo)</label>
+                                        <input class="form-control" name="slug" placeholder="laptop-dell-xps-13">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Mô tả ngắn</label>
+                                <input class="form-control" name="short_description" placeholder="Tóm tắt đặc điểm nổi bật...">
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label small fw-bold">Mô tả chi tiết</label>
+                                <textarea class="form-control" name="description" rows="8" placeholder="Mô tả chi tiết về sản phẩm..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Specifications -->
+                    <div class="card border-0 shadow-sm rounded-4">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-cpu me-2 text-primary"></i>Thông số kỹ thuật</h6>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">CPU</label>
+                                        <input class="form-control" name="cpu" placeholder="Intel Core i5-12500H">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">RAM</label>
+                                        <input class="form-control" name="ram" placeholder="16GB DDR4 3200MHz">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Ổ cứng</label>
+                                        <input class="form-control" name="storage" placeholder="512GB SSD NVMe">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Card đồ họa</label>
+                                        <input class="form-control" name="gpu" placeholder="RTX 3050 4GB">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Màn hình</label>
+                                        <input class="form-control" name="screen" placeholder="15.6 inch FHD 144Hz">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Hệ điều hành</label>
+                                        <input class="form-control" name="os" placeholder="Windows 11 Home">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Trọng lượng</label>
+                                        <input class="form-control" name="weight" placeholder="2.1 kg">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Pin</label>
+                                        <input class="form-control" name="battery" placeholder="3-cell, 52.5 Wh">
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="mb-0">
+                                        <label class="form-label small fw-bold">Cổng kết nối</label>
+                                        <input class="form-control" name="ports" placeholder="1x USB-C, 3x USB-A, 1x HDMI">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Organization -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-tags me-2 text-primary"></i>Phân loại & Trạng thái</h6>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Danh mục</label>
+                                <select class="form-select" name="category_id">
+                                    <option value="">-- Chọn danh mục --</option>
+                                    <?php foreach ($categories as $cat): ?>
+                                        <option value="<?php echo $cat['id']; ?>"><?php echo htmlspecialchars($cat['name']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Thương hiệu</label>
+                                <select class="form-select" name="brand_id">
+                                    <option value="">-- Chọn thương hiệu --</option>
+                                    <?php foreach ($brands as $b): ?>
+                                        <option value="<?php echo $b['id']; ?>"><?php echo htmlspecialchars($b['name']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="form-check form-switch mt-4">
+                                <input type="checkbox" class="form-check-input" name="is_active" id="is_active" checked>
+                                <label class="form-check-label fw-bold" for="is_active">Hiển thị sản phẩm</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing & Inventory -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-currency-dollar me-2 text-primary"></i>Giá & Kho hàng</h6>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Giá bán (đ)</label>
+                                <input type="number" step="0.01" class="form-control" name="price" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Giá khuyến mãi (đ)</label>
+                                <input type="number" step="0.01" class="form-control" name="sale_price">
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label small fw-bold">Số lượng kho</label>
+                                <input type="number" class="form-control" name="stock" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Media -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-image me-2 text-primary"></i>Hình ảnh</h6>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="mb-0">
+                                <label class="form-label small fw-bold">URL ảnh chính</label>
+                                <input class="form-control" name="image" placeholder="https://...">
+                                <div class="form-text x-small mt-2">Sử dụng URL ảnh từ thư viện hoặc link ngoài.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="card border-0 shadow-sm rounded-4">
+                        <div class="card-body p-4">
+                            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 mb-2">
+                                <i class="bi bi-plus-lg me-2"></i>Thêm sản phẩm
+                            </button>
+                            <a href="products.php" class="btn btn-white border w-100 fw-bold py-2">Hủy bỏ</a>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </form>
-        </div>
-      </div>
+        </form>
     </div>
-  </div>
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

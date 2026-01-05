@@ -4,13 +4,15 @@ require_once __DIR__ . "/functions.php";
 
 $q = $_GET["q"] ?? "";
 $category_slug = $_GET["category"] ?? "";
-$brand = $_GET["brand"] ?? "";
+$selected_brands = isset($_GET['brands']) ? (array)$_GET['brands'] : [];
+$min_price = $_GET['min_price'] ?? "";
+$max_price = $_GET['max_price'] ?? "";
 
 // Fetch all categories for the homepage sections
 $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAll();
 
 // If searching or filtering, use the old grid view
-$is_filtered = ($q || $category_slug || $brand);
+$is_filtered = ($q || $category_slug || !empty($selected_brands) || $min_price !== "" || $max_price !== "");
 
 if ($is_filtered) {
     $sql = "SELECT p.*, pi.url as image_url 
@@ -28,9 +30,20 @@ if ($is_filtered) {
         $sql .= " AND p.category_id IN (SELECT id FROM categories WHERE slug = ?)";
         $params[] = $category_slug;
     }
-    if ($brand) {
-        $sql .= " AND p.brand_id IN (SELECT id FROM brands WHERE name = ?)";
-        $params[] = $brand;
+    if (!empty($selected_brands)) {
+        $placeholders = implode(',', array_fill(0, count($selected_brands), '?'));
+        $sql .= " AND p.brand_id IN (SELECT id FROM brands WHERE name IN ($placeholders))";
+        foreach ($selected_brands as $b) {
+            $params[] = $b;
+        }
+    }
+    if ($min_price !== "") {
+        $sql .= " AND p.price >= ?";
+        $params[] = (float)$min_price;
+    }
+    if ($max_price !== "") {
+        $sql .= " AND p.price <= ?";
+        $params[] = (float)$max_price;
     }
 
     $sql .= " ORDER BY p.created_at DESC";
@@ -72,16 +85,30 @@ if ($is_filtered) {
     }
     .scroll-container {
         display: flex;
-        flex-wrap: nowrap; /* Ensure items stay in one row */
+        flex-wrap: nowrap;
         overflow-x: auto;
         gap: 15px;
         padding: 10px 5px 20px 5px;
-        scrollbar-width: none; /* Hide scrollbar for cleaner look */
+        scrollbar-width: none;
         -ms-overflow-style: none;
-        /* Remove scroll-behavior: smooth from here to allow auto-scroll to work properly */
+        scroll-behavior: smooth;
     }
     .scroll-container::-webkit-scrollbar { display: none; }
-    .scroll-item { flex: 0 0 200px; }
+    .scroll-item { 
+        flex: 0 0 calc(25% - 12px); /* Show exactly 4 items (15px gap * 3 / 4 = 11.25px) */
+        min-width: 200px;
+        user-select: none;
+    }
+
+    @media (max-width: 1200px) {
+        .scroll-item { flex: 0 0 calc(33.333% - 10px); } /* 3 items */
+    }
+    @media (max-width: 768px) {
+        .scroll-item { flex: 0 0 calc(50% - 8px); } /* 2 items */
+    }
+    @media (max-width: 480px) {
+        .scroll-item { flex: 0 0 calc(100% - 0px); } /* 1 item */
+    }
 
     .scroll-btn {
         position: absolute;
@@ -90,7 +117,7 @@ if ($is_filtered) {
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: #fff;
+        background: rgba(255, 255, 255, 0.9);
         border: 1px solid #eee;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         display: flex;
@@ -100,7 +127,11 @@ if ($is_filtered) {
         cursor: pointer;
         transition: all 0.2s;
         color: var(--tet-red);
-        opacity: 0.9;
+        opacity: 0; /* Hidden by default, show on hover */
+        user-select: none;
+    }
+    .scroll-wrapper:hover .scroll-btn {
+        opacity: 1;
     }
     .scroll-btn:hover { 
         background: var(--tet-red); 
@@ -109,10 +140,8 @@ if ($is_filtered) {
         opacity: 1;
         box-shadow: 0 4px 15px rgba(198, 40, 40, 0.4);
     }
-    .scroll-btn.scroll-btn-left { left: -10px; }
-    .scroll-btn.scroll-btn-right { right: -10px; }
-    .scroll-btn-left { left: 0; }
-    .scroll-btn-right { right: 0; }
+    .scroll-btn-left { left: -15px; }
+    .scroll-btn-right { right: -15px; }
 
     .section-header {
         display: flex;
@@ -262,37 +291,38 @@ if ($is_filtered) {
         
         <?php if (!$is_filtered): ?>
             <!-- Banner Carousel -->
+            <?php
+            $banners = $pdo->query("SELECT * FROM banners WHERE is_active = 1 ORDER BY position ASC")->fetchAll();
+            ?>
             <div id="homeCarousel" class="carousel slide home-carousel mb-4 shadow-sm rounded overflow-hidden" data-bs-ride="carousel">
                 <div class="carousel-indicators">
-                    <button type="button" data-bs-target="#homeCarousel" data-bs-slide-to="0" class="active"></button>
-                    <button type="button" data-bs-target="#homeCarousel" data-bs-slide-to="1"></button>
-                    <button type="button" data-bs-target="#homeCarousel" data-bs-slide-to="2"></button>
+                    <?php foreach ($banners as $index => $b): ?>
+                        <button type="button" data-bs-target="#homeCarousel" data-bs-slide-to="<?php echo $index; ?>" class="<?php echo $index === 0 ? 'active' : ''; ?>"></button>
+                    <?php endforeach; ?>
                 </div>
                 <div class="carousel-inner">
-                    <div class="carousel-item active">
-                        <img src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1200&q=80" class="d-block w-100" alt="Shop Intro">
-                        <div class="carousel-caption text-start">
-                            <h2 class="fw-bold text-warning">Chào mừng đến với GrowTech</h2>
-                            <p>Hệ thống bán lẻ Laptop uy tín hàng đầu Việt Nam. Cam kết chất lượng, bảo hành tận tâm.</p>
-                            <a href="/weblaptop/contact.php" class="btn btn-warning fw-bold">Tìm hiểu thêm</a>
+                    <?php foreach ($banners as $index => $b): ?>
+                        <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
+                            <img src="<?php echo htmlspecialchars($b['image_url']); ?>" class="d-block w-100" alt="<?php echo htmlspecialchars($b['title']); ?>">
+                            <div class="carousel-caption <?php echo $index % 3 == 0 ? 'text-start' : ($index % 3 == 1 ? '' : 'text-end'); ?>">
+                                <h2 class="fw-bold <?php echo $index % 2 == 0 ? 'text-warning' : 'text-danger'; ?>"><?php echo htmlspecialchars($b['title']); ?></h2>
+                                <p><?php echo htmlspecialchars($b['description']); ?></p>
+                                <?php if ($b['link_url']): ?>
+                                    <a href="<?php echo htmlspecialchars($b['link_url']); ?>" class="btn <?php echo $index % 2 == 0 ? 'btn-warning' : 'btn-danger'; ?> fw-bold">Xem chi tiết</a>
+                                <?php endif; ?>
+                            </div>
                         </div>
-                    </div>
-                    <div class="carousel-item">
-                        <img src="https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=1200&q=80" class="d-block w-100" alt="Tet Event">
-                        <div class="carousel-caption">
-                            <h2 class="fw-bold text-danger">🧧 KHAI XUÂN NHƯ Ý 🧧</h2>
-                            <p>Lì xì ngay 1.000.000đ cho đơn hàng Laptop Gaming từ 20 triệu.</p>
-                            <a href="/weblaptop/search.php?q=gaming" class="btn btn-danger">Săn Deal Ngay</a>
+                    <?php endforeach; ?>
+                    
+                    <?php if (empty($banners)): ?>
+                        <div class="carousel-item active">
+                            <img src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1200&q=80" class="d-block w-100" alt="Default">
+                            <div class="carousel-caption text-start">
+                                <h2 class="fw-bold text-warning">Chào mừng đến với GrowTech</h2>
+                                <p>Hệ thống bán lẻ Laptop uy tín hàng đầu Việt Nam.</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="carousel-item">
-                        <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1200&q=80" class="d-block w-100" alt="MacBook Pro">
-                        <div class="carousel-caption text-end">
-                            <h2 class="fw-bold text-info">MacBook Pro M3 Series</h2>
-                            <p>Sức mạnh vượt trội cho mọi tác vụ đồ họa chuyên nghiệp. Trả góp 0%.</p>
-                            <a href="/weblaptop/search.php?q=Apple" class="btn btn-info text-white">Xem chi tiết</a>
-                        </div>
-                    </div>
+                    <?php endif; ?>
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#homeCarousel" data-bs-slide="prev">
                     <span class="carousel-control-prev-icon"></span>
@@ -303,57 +333,96 @@ if ($is_filtered) {
             </div>
 
             <!-- Flash Sale Section -->
-            <div class="flash-sale-container shadow-sm">
+            <?php
+            $flash_sale_products = getFlashSaleProducts(20);
+            // Fetch flash sale end time from settings
+            $flash_sale_end = $pdo->query("SELECT `value` FROM settings WHERE `key` = 'flash_sale_end'")->fetchColumn() ?: date('Y-m-d 23:59:59');
+            ?>
+            <div class="flash-sale-container shadow-sm" data-end-time="<?php echo $flash_sale_end; ?>">
                 <div class="flash-sale-header">
-                    <h3 class="flash-sale-title">
-                        <i class="bi bi-lightning-fill text-warning"></i> FLASH SALE
-                    </h3>
-                    <div class="flash-sale-timer" id="flashSaleTimer">
-                        <span class="timer-box" id="timer-h">02</span> :
-                        <span class="timer-box" id="timer-m">45</span> :
-                        <span class="timer-box" id="timer-s">12</span>
+                    <h3 class="flash-sale-title"><i class="bi bi-lightning-fill"></i> FLASH SALE</h3>
+                    <div class="flash-sale-timer">
+                        <span class="small me-1">Kết thúc sau:</span>
+                        <div class="timer-box" id="timer-h">00</div>
+                        <span>:</span>
+                        <div class="timer-box" id="timer-m">00</div>
+                        <span>:</span>
+                        <div class="timer-box" id="timer-s">00</div>
                     </div>
-                    <div class="ms-auto d-none d-md-block">
-                        <a href="/weblaptop/search.php" class="text-white text-decoration-none small">Xem tất cả <i class="bi bi-chevron-right"></i></a>
-                    </div>
+                    <a href="promotions.php" class="ms-auto text-white text-decoration-none small">Xem tất cả <i class="bi bi-chevron-right"></i></a>
                 </div>
+                
                 <div class="scroll-wrapper">
                     <div class="scroll-btn scroll-btn-left"><i class="bi bi-chevron-left"></i></div>
                     <div class="scroll-btn scroll-btn-right"><i class="bi bi-chevron-right"></i></div>
                     <div class="scroll-container">
-                        <?php
-                        // Fetch some products for flash sale (mocking with random discount)
-                        $stmt_flash = $pdo->query("SELECT p.*, pi.url as image_url FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.position = 0 WHERE p.is_active = 1 LIMIT 6");
-                        while ($p = $stmt_flash->fetch()):
-                            $img = $p["image_url"];
+                        <?php foreach ($flash_sale_products as $p): 
+                            $img = $p['image_url'];
                             if (!$img || (strpos($img, 'http') !== 0 && strpos($img, '/') !== 0)) {
                                 $img = 'https://placehold.co/600x400?text=No+Image';
                             }
-                            $discount = rand(10, 30);
-                            $old_price = $p["price"] * (1 + $discount/100);
-                            $sold_percent = rand(40, 90);
+                            $discount = round((1 - $p['sale_price'] / $p['price']) * 100);
+                            $sold_count = rand(10, 50); 
+                            $percent_sold = min(100, round(($sold_count / 60) * 100));
                         ?>
-                            <div class="scroll-item">
-                                <a href="product.php?id=<?php echo $p["id"]; ?>" class="text-decoration-none">
-                                    <div class="flash-sale-item">
-                                        <div class="position-relative">
-                                            <img src="<?php echo htmlspecialchars($img); ?>" class="img-fluid rounded mb-2" style="aspect-ratio:1/1; object-fit:cover;" alt="">
-                                            <div class="product-badge" style="top:0; left:0;">-<?php echo $discount; ?>%</div>
-                                        </div>
-                                        <div class="product-grid-name text-start mb-1"><?php echo htmlspecialchars($p["name"]); ?></div>
-                                        <div class="flash-sale-price text-start"><?php echo number_format($p["price"], 0, ",", "."); ?> đ</div>
-                                        <div class="flash-sale-old-price text-start"><?php echo number_format($old_price, 0, ",", "."); ?> đ</div>
-                                        <div class="flash-sale-progress">
-                                            <div class="flash-sale-progress-bar" style="width: <?php echo $sold_percent; ?>%;"></div>
-                                            <div class="flash-sale-progress-text">ĐÃ BÁN <?php echo $sold_percent; ?>%</div>
-                                        </div>
+                        <div class="scroll-item">
+                            <a href="product.php?id=<?php echo $p['id']; ?>" class="text-decoration-none">
+                                <div class="flash-sale-item">
+                                    <div class="position-relative mb-2">
+                                        <img src="<?php echo htmlspecialchars($img); ?>" class="img-fluid rounded" style="aspect-ratio:1/1; object-fit:cover;" alt="<?php echo htmlspecialchars($p['name']); ?>">
+                                        <div class="product-badge">-<?php echo $discount; ?>%</div>
                                     </div>
-                                </a>
-                            </div>
-                        <?php endwhile; ?>
+                                    <div class="text-truncate small mb-1 fw-bold text-start"><?php echo htmlspecialchars($p['name']); ?></div>
+                                    <div class="flash-sale-price text-start"><?php echo number_format($p['sale_price'], 0, ',', '.'); ?>đ</div>
+                                    <div class="flash-sale-old-price text-start"><?php echo number_format($p['price'], 0, ',', '.'); ?>đ</div>
+                                    <div class="flash-sale-progress">
+                                        <div class="flash-sale-progress-bar" style="width: <?php echo $percent_sold; ?>%"></div>
+                                        <div class="flash-sale-progress-text">ĐÃ BÁN <?php echo $sold_count; ?></div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
             </div>
+
+            <!-- Vouchers Section -->
+            <?php
+            $home_vouchers = $pdo->query("SELECT * FROM vouchers WHERE is_active = 1 AND (start_date <= NOW() OR start_date IS NULL) AND (end_date >= NOW() OR end_date IS NULL) AND (usage_limit IS NULL OR usage_count < usage_limit) ORDER BY created_at DESC LIMIT 4")->fetchAll();
+            if (!empty($home_vouchers)):
+            ?>
+            <div class="mb-5">
+                <div class="section-header">
+                    <h4 class="section-title"><i class="bi bi-ticket-perforated-fill me-2"></i> Mã Giảm Giá GrowTech</h4>
+                    <a href="/weblaptop/cart.php" class="view-more">Xem thêm <i class="bi bi-chevron-right"></i></a>
+                </div>
+                <div class="row g-3">
+                    <?php foreach ($home_vouchers as $v): ?>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #fff 70%, #fff5f5 100%); border-left: 5px solid var(--tet-red) !important;">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-danger"><?php echo $v['code']; ?></span>
+                                    <span class="small text-muted">HSD: <?php echo date('d/m', strtotime($v['end_date'])); ?></span>
+                                </div>
+                                <h6 class="fw-bold mb-1">Giảm <?php echo $v['discount_type'] == 'percentage' ? $v['discount_value'].'%' : number_format($v['discount_value'], 0, ',', '.').'đ'; ?></h6>
+                                <p class="small text-muted mb-2">Đơn tối thiểu <?php echo number_format($v['min_spend'], 0, ',', '.'); ?>đ</p>
+                                <button class="btn btn-sm btn-outline-danger w-100 py-1" onclick="copyVoucher('<?php echo $v['code']; ?>')">Sao chép mã</button>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <script>
+            function copyVoucher(code) {
+                navigator.clipboard.writeText(code).then(() => {
+                    alert('Đã sao chép mã: ' + code);
+                });
+            }
+            </script>
+            <?php endif; ?>
 
             <!-- Featured Products Section -->
             <div class="mb-5">
@@ -366,7 +435,7 @@ if ($is_filtered) {
                     <div class="scroll-btn scroll-btn-right"><i class="bi bi-chevron-right"></i></div>
                     <div class="scroll-container">
                         <?php
-                        $stmt_feat = $pdo->query("SELECT p.*, pi.url as image_url FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.position = 0 WHERE p.is_active = 1 ORDER BY p.created_at DESC LIMIT 10");
+                        $stmt_feat = $pdo->query("SELECT p.*, pi.url as image_url FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.position = 0 WHERE p.is_active = 1 ORDER BY p.created_at DESC LIMIT 20");
                         while ($p = $stmt_feat->fetch()):
                             $img = $p["image_url"];
                             if (!$img || (strpos($img, 'http') !== 0 && strpos($img, '/') !== 0)) {
@@ -375,16 +444,14 @@ if ($is_filtered) {
                         ?>
                             <div class="scroll-item">
                                 <a href="product.php?id=<?php echo $p["id"]; ?>" class="text-decoration-none">
-                                    <div class="product-grid-item shadow-sm">
-                                        <div class="product-badge">Mới</div>
-                                        <img src="<?php echo htmlspecialchars($img); ?>" class="product-grid-img" alt="">
-                                        <div class="product-grid-info">
-                                            <div class="product-grid-name"><?php echo htmlspecialchars($p["name"]); ?></div>
-                                            <div class="mt-auto">
-                                                <div class="product-grid-price"><?php echo number_format($p["price"], 0, ",", "."); ?> đ</div>
-                                                <div class="product-grid-sold mt-1">Đã bán 50+</div>
-                                            </div>
+                                    <div class="flash-sale-item">
+                                        <div class="position-relative">
+                                            <img src="<?php echo htmlspecialchars($img); ?>" class="img-fluid rounded mb-2" style="aspect-ratio:1/1; object-fit:cover;" alt="">
+                                            <div class="product-badge" style="top:0; left:0;">Mới</div>
                                         </div>
+                                        <div class="product-grid-name text-start mb-1"><?php echo htmlspecialchars($p["name"]); ?></div>
+                                        <div class="flash-sale-price text-start"><?php echo number_format($p["price"], 0, ",", "."); ?> đ</div>
+                                        <div class="product-grid-sold text-start mt-1">Đã bán <?php echo rand(50, 200); ?>+</div>
                                     </div>
                                 </a>
                             </div>
@@ -393,85 +460,81 @@ if ($is_filtered) {
                 </div>
             </div>
 
-            <!-- Category Sections -->
-            <?php foreach ($categories as $cat): ?>
+            <!-- Category Sliders -->
+            <?php
+            // Get top 3 categories that have products
+            $stmt_cat_sliders = $pdo->query("SELECT c.* FROM categories c WHERE EXISTS (SELECT 1 FROM products p WHERE p.category_id = c.id AND p.is_active = 1) LIMIT 3");
+            while ($cat = $stmt_cat_sliders->fetch()):
+            ?>
                 <div class="mb-5">
                     <div class="section-header">
-                        <h4 class="section-title"><span class="sparkle-effect"></span> <?php echo htmlspecialchars($cat['name']); ?></h4>
-                        <a href="/weblaptop/search.php?category=<?php echo $cat['slug']; ?>" class="view-more">Xem thêm <i class="bi bi-chevron-right"></i></a>
+                        <h4 class="section-title"><?php echo htmlspecialchars($cat["name"]); ?></h4>
+                        <a href="/weblaptop/search.php?category=<?php echo $cat["slug"]; ?>" class="view-more">Xem tất cả <i class="bi bi-chevron-right"></i></a>
                     </div>
                     <div class="scroll-wrapper">
                         <div class="scroll-btn scroll-btn-left"><i class="bi bi-chevron-left"></i></div>
                         <div class="scroll-btn scroll-btn-right"><i class="bi bi-chevron-right"></i></div>
                         <div class="scroll-container">
                             <?php
-                            $stmt_cat = $pdo->prepare("SELECT p.*, pi.url as image_url FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.position = 0 WHERE p.category_id = ? AND p.is_active = 1 LIMIT 8");
-                            $stmt_cat->execute([$cat['id']]);
-                            $cat_products = $stmt_cat->fetchAll();
-                            
-                            if (empty($cat_products)): ?>
-                                <div class="text-muted small p-3">Đang cập nhật sản phẩm...</div>
-                            <?php else:
-                                foreach ($cat_products as $p):
-                                    $img = $p["image_url"];
-                                    if (!$img || (strpos($img, 'http') !== 0 && strpos($img, '/') !== 0)) {
-                                        $img = 'https://placehold.co/600x400?text=No+Image';
-                                    }
+                            $stmt_cat_p = $pdo->prepare("SELECT p.*, pi.url as image_url FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.position = 0 WHERE p.category_id = ? AND p.is_active = 1 LIMIT 15");
+                            $stmt_cat_p->execute([$cat["id"]]);
+                            while ($p = $stmt_cat_p->fetch()):
+                                $img = $p["image_url"];
+                                if (!$img || (strpos($img, 'http') !== 0 && strpos($img, '/') !== 0)) {
+                                    $img = 'https://placehold.co/600x400?text=No+Image';
+                                }
                             ?>
                                 <div class="scroll-item">
                                     <a href="product.php?id=<?php echo $p["id"]; ?>" class="text-decoration-none">
-                                        <div class="product-grid-item shadow-sm">
-                                            <div class="product-badge">Hot</div>
-                                            <img src="<?php echo htmlspecialchars($img); ?>" class="product-grid-img" alt="">
-                                            <div class="product-grid-info">
-                                                <div class="product-grid-name"><?php echo htmlspecialchars($p["name"]); ?></div>
-                                                <div class="mt-auto">
-                                                    <div class="product-grid-price"><?php echo number_format($p["price"], 0, ",", "."); ?> đ</div>
-                                                    <div class="product-grid-sold mt-1">Đã bán 20+</div>
-                                                </div>
+                                        <div class="flash-sale-item">
+                                            <div class="position-relative">
+                                                <img src="<?php echo htmlspecialchars($img); ?>" class="img-fluid rounded mb-2" style="aspect-ratio:1/1; object-fit:cover;" alt="">
                                             </div>
+                                            <div class="product-grid-name text-start mb-1"><?php echo htmlspecialchars($p["name"]); ?></div>
+                                            <div class="flash-sale-price text-start"><?php echo number_format($p["price"], 0, ",", "."); ?> đ</div>
+                                            <div class="product-grid-sold text-start mt-1">Đã bán <?php echo rand(10, 100); ?>+</div>
                                         </div>
                                     </a>
                                 </div>
-                            <?php endforeach; endif; ?>
+                            <?php endwhile; ?>
                         </div>
                     </div>
                 </div>
-            <?php endforeach; ?>
+            <?php endwhile; ?>
 
             <!-- Today's Suggestions (Gợi ý hôm nay) -->
             <div class="mt-5 mb-4">
-                <div class="section-header" style="border-bottom: 4px solid var(--tet-red);">
-                    <h4 class="section-title py-2 px-4 text-white" style="background: var(--tet-red); margin-bottom: -4px;">GỢI Ý HÔM NAY</h4>
+                <div class="section-header">
+                    <h4 class="section-title"><span class="sparkle-effect"></span> Gợi ý hôm nay</h4>
+                    <a href="/weblaptop/search.php" class="view-more">Xem tất cả <i class="bi bi-chevron-right"></i></a>
                 </div>
-                <div class="suggestion-grid mt-3" id="suggestion-container">
-                    <?php
-                    // Initial load of 10 products
-                    $stmt_sug = $pdo->query("SELECT p.*, pi.url as image_url FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.position = 0 WHERE p.is_active = 1 ORDER BY p.created_at DESC LIMIT 10");
-                    while ($p = $stmt_sug->fetch()):
-                        $img = $p["image_url"];
-                        if (!$img || (strpos($img, 'http') !== 0 && strpos($img, '/') !== 0)) {
-                            $img = 'https://placehold.co/600x400?text=No+Image';
-                        }
-                    ?>
-                        <div class="suggestion-item">
-                            <a href="product.php?id=<?php echo $p["id"]; ?>" class="text-decoration-none">
-                                <div class="product-grid-item shadow-sm h-100">
-                                    <img src="<?php echo htmlspecialchars($img); ?>" class="product-grid-img" alt="">
-                                    <div class="product-grid-info">
-                                        <div class="product-grid-name"><?php echo htmlspecialchars($p["name"]); ?></div>
-                                        <div class="mt-auto">
-                                            <div class="product-grid-price"><?php echo number_format($p["price"], 0, ",", "."); ?> đ</div>
-                                            <div class="product-grid-sold mt-1">Đã bán <?php echo rand(100, 999); ?>+</div>
+                <div class="scroll-wrapper">
+                    <div class="scroll-btn scroll-btn-left"><i class="bi bi-chevron-left"></i></div>
+                    <div class="scroll-btn scroll-btn-right"><i class="bi bi-chevron-right"></i></div>
+                    <div class="scroll-container" id="suggestion-container">
+                        <?php
+                        // Initial load of 30 products for the scroll
+                        $stmt_sug = $pdo->query("SELECT p.*, pi.url as image_url FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.position = 0 WHERE p.is_active = 1 ORDER BY p.created_at DESC LIMIT 30");
+                        while ($p = $stmt_sug->fetch()):
+                            $img = $p["image_url"];
+                            if (!$img || (strpos($img, 'http') !== 0 && strpos($img, '/') !== 0)) {
+                                $img = 'https://placehold.co/600x400?text=No+Image';
+                            }
+                        ?>
+                            <div class="scroll-item">
+                                <a href="product.php?id=<?php echo $p["id"]; ?>" class="text-decoration-none">
+                                    <div class="flash-sale-item">
+                                        <div class="position-relative">
+                                            <img src="<?php echo htmlspecialchars($img); ?>" class="img-fluid rounded mb-2" style="aspect-ratio:1/1; object-fit:cover;" alt="">
                                         </div>
+                                        <div class="product-grid-name text-start mb-1"><?php echo htmlspecialchars($p["name"]); ?></div>
+                                        <div class="flash-sale-price text-start"><?php echo number_format($p["price"], 0, ",", "."); ?> đ</div>
+                                        <div class="product-grid-sold text-start mt-1">Đã bán <?php echo rand(100, 999); ?>+</div>
                                     </div>
-                                </div>
-                            </a>
-                        </div>
-                    <?php endwhile; ?>
-                </div>
-                <div class="text-center mt-4">
-                    <button id="btn-load-more" class="btn btn-load-more" data-page="1">Xem thêm</button>
+                                </a>
+                            </div>
+                        <?php endwhile; ?>
+                    </div>
                 </div>
             </div>
 

@@ -1,4 +1,7 @@
-html {
+html,
+body {
+  margin: 0;
+  padding: 0;
   scroll-behavior: smooth;
 }
 
@@ -9,7 +12,8 @@ html {
   right: 30px;
   width: 45px;
   height: 45px;
-  background: #d32f2f; /* tet-red */
+  background: #d32f2f;
+  /* tet-red */
   color: #fff;
   border-radius: 50%;
   display: flex;
@@ -17,17 +21,20 @@ html {
   justify-content: center;
   font-size: 20px;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s;
   z-index: 1000;
-  border: 2px solid #ffc107; /* tet-gold */
+  border: 2px solid #ffc107;
+  /* tet-gold */
 }
+
 #back-to-top.show {
   opacity: 1;
   visibility: visible;
 }
+
 #back-to-top:hover {
   background: #b71c1c;
   transform: translateY(-5px);
@@ -37,13 +44,14 @@ html {
 .scroll-wrapper {
   position: relative;
 }
+
 .scroll-btn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   width: 40px;
   height: 40px;
-  background: rgba(255,255,255,0.9);
+  background: rgba(255, 255, 255, 0.9);
   border: 1px solid #eee;
   border-radius: 50%;
   display: flex;
@@ -51,18 +59,28 @@ html {
   justify-content: center;
   cursor: pointer;
   z-index: 10;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   transition: all 0.2s;
   color: #d32f2f;
 }
+
 .scroll-btn:hover {
   background: #d32f2f;
   color: #fff;
 }
-.scroll-btn-left { left: -20px; }
-.scroll-btn-right { right: -20px; }
+
+.scroll-btn-left {
+  left: -20px;
+}
+
+.scroll-btn-right {
+  right: -20px;
+}
+
 @media (max-width: 768px) {
-  .scroll-btn { display: none; }
+  .scroll-btn {
+    display: none;
+  }
 }
 
 /* Custom styles for WebLaptop demo */

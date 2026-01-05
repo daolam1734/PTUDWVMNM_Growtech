@@ -6,6 +6,8 @@
       <div class="col-md-3">
         <h6 class="text-dark fw-bold mb-3">CHĂM SÓC KHÁCH HÀNG</h6>
         <ul class="list-unstyled small">
+          <li><a href="/weblaptop/promotions.php" class="text-muted text-decoration-none">Chương Trình Khuyến Mãi</a></li>
+          <li><a href="/weblaptop/news.php" class="text-muted text-decoration-none">Tin Tức Công Nghệ</a></li>
           <li><a href="#" class="text-muted text-decoration-none">Trung Tâm Trợ Giúp</a></li>
           <li><a href="#" class="text-muted text-decoration-none">GrowTech Blog</a></li>
           <li><a href="/weblaptop/shipping.php" class="text-muted text-decoration-none">Hướng Dẫn Mua Hàng</a></li>
