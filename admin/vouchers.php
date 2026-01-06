@@ -227,11 +227,11 @@ require_once __DIR__ . '/includes/header.php';
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Mã Voucher</label>
-                            <input type="text" name="code" id="vCode" class="form-control form-control-lg fs-6 text-uppercase" placeholder="VD: GIAM20K" required>
+                            <input type="text" name="code" id="voucherCode" class="form-control form-control-lg fs-6 text-uppercase" placeholder="VD: GIAM20K" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Loại giảm giá</label>
-                            <select name="discount_type" id="vType" class="form-select" required>
+                            <select name="discount_type" id="voucherType" class="form-select" required>
                                 <option value="fixed">Số tiền cố định (đ)</option>
                                 <option value="percentage">Phần trăm (%)</option>
                                 <option value="shipping">Giảm giá vận chuyển</option>
@@ -239,31 +239,31 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Giá trị giảm</label>
-                            <input type="number" name="discount_value" id="vValue" class="form-control" required>
+                            <input type="number" name="discount_value" id="voucherValue" class="form-control" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Đơn tối thiểu</label>
-                            <input type="number" name="min_spend" id="vMinSpend" class="form-control" value="0">
+                            <input type="number" name="min_spend" id="voucherMin" class="form-control" value="0">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Giảm tối đa (cho %)</label>
-                            <input type="number" name="max_discount" id="vMaxDiscount" class="form-control" placeholder="Để trống nếu không giới hạn">
+                            <input type="number" name="max_discount" id="voucherMax" class="form-control" placeholder="Để trống nếu không giới hạn">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Lượt sử dụng tối đa</label>
-                            <input type="number" name="usage_limit" id="vLimit" class="form-control" placeholder="Để trống nếu không giới hạn">
+                            <input type="number" name="usage_limit" id="voucherLimit" class="form-control" placeholder="Để trống nếu không giới hạn">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Ngày bắt đầu</label>
-                            <input type="date" name="start_date" id="vStart" class="form-control" required>
+                            <input type="datetime-local" name="start_date" id="voucherStart" class="form-control" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Ngày kết thúc</label>
-                            <input type="date" name="end_date" id="vEnd" class="form-control" required>
+                            <input type="datetime-local" name="end_date" id="voucherEnd" class="form-control" required>
                         </div>
                         <div class="col-12">
                             <div class="form-check form-switch mt-2">
-                                <input class="form-check-input" type="checkbox" name="is_active" id="vActive" checked>
+                                <input class="form-check-input" type="checkbox" name="is_active" id="voucherActive" checked>
                                 <label class="form-check-label fw-bold small">Kích hoạt Voucher ngay</label>
                             </div>
                         </div>
@@ -280,38 +280,12 @@ require_once __DIR__ . '/includes/header.php';
 
 <script>
 function resetModal() {
-    document.getElementById('modalAction').value = 'add';
     document.getElementById('modalTitle').innerText = 'Tạo Voucher Mới';
+    document.getElementById('modalAction').value = 'add';
     document.getElementById('voucherId').value = '';
-    document.getElementById('vCode').value = '';
-    document.getElementById('vValue').value = '';
-    document.getElementById('vMinSpend').value = '0';
-    document.getElementById('vMaxDiscount').value = '';
-    document.getElementById('vLimit').value = '';
-    document.getElementById('vStart').value = '';
-    document.getElementById('vEnd').value = '';
-    document.getElementById('vActive').checked = true;
-}
-
-function editVoucher(v) {
-    document.getElementById('modalAction').value = 'edit';
-    document.getElementById('modalTitle').innerText = 'Chỉnh Sửa Voucher';
-    document.getElementById('voucherId').value = v.id;
-    document.getElementById('vCode').value = v.code;
-    document.getElementById('vType').value = v.discount_type;
-    document.getElementById('vValue').value = v.discount_value;
-    document.getElementById('vMinSpend').value = v.min_spend;
-    document.getElementById('vMaxDiscount').value = v.max_discount || '';
-    document.getElementById('vLimit').value = v.usage_limit || '';
-    document.getElementById('vStart').value = v.start_date;
-    document.getElementById('vEnd').value = v.end_date;
-    document.getElementById('vActive').checked = v.is_active == 1;
-    
-    new bootstrap.Modal(document.getElementById('voucherModal')).show();
-}
-</script>
-
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
+    document.getElementById('voucherCode').value = '';
+    document.getElementById('voucherType').value = 'fixed';
+    document.getElementById('voucherValue').value = '';
     document.getElementById('voucherMax').value = '';
     document.getElementById('voucherMin').value = '0';
     document.getElementById('voucherLimit').value = '';

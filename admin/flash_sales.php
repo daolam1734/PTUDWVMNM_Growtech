@@ -85,17 +85,17 @@ require_once __DIR__ . '/includes/header.php';
         <div class="mb-4">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1">
-                    <li class="breadcrumb-item"><a href="dashboard.php" class="text-decoration-none text-muted">Dashboard</a></li>
-                    <li class="breadcrumb-item active text-primary">Flash Sale</li>
+                    <li class="breadcrumb-item small"><a href="dashboard.php" class="text-decoration-none text-muted">Bảng điều khiển</a></li>
+                    <li class="breadcrumb-item small active" aria-current="page">Khuyến mãi</li>
                 </ol>
             </nav>
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h4 class="fw-bold mb-0">Quản lý Flash Sale</h4>
-                    <p class="text-muted small mb-0">Tạo các chương trình giảm giá chớp nhoáng theo thời gian</p>
+                    <h4 class="fw-bold mb-0">Quản Lý Flash Sale</h4>
+                    <p class="text-muted small mb-0">Tạo chương trình giảm giá chớp nhoáng theo mốc thời gian.</p>
                 </div>
                 <button type="button" class="btn btn-primary shadow-sm px-4 rounded-pill" data-bs-toggle="modal" data-bs-target="#addProductModal">
-                    <i class="bi bi-plus-lg me-2"></i>Thêm sản phẩm
+                    <i class="bi bi-plus-lg me-2"></i>Thêm sản phẩm sale
                 </button>
             </div>
         </div>
@@ -258,38 +258,6 @@ require_once __DIR__ . '/includes/header.php';
             </div>
             <div class="modal-footer border-top p-3">
                 <button type="button" class="btn btn-light fw-bold rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
-            </div>
-        </div>
-    </div>
-</div>
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <img src="<?php echo htmlspecialchars($p['image_url'] ?: 'https://placehold.co/50'); ?>" class="rounded me-2" style="width: 32px; height: 32px; object-fit: cover;">
-                                            <div class="small fw-bold text-dark text-truncate" style="max-width: 200px;"><?php echo htmlspecialchars($p['name']); ?></div>
-                                        </div>
-                                    </td>
-                                    <td class="text-center small"><?php echo number_format($p['price'], 0, ',', '.'); ?>đ</td>
-                                    <td>
-                                        <form method="POST" id="form-add-<?php echo $p['id']; ?>">
-                                            <input type="hidden" name="product_id" value="<?php echo $p['id']; ?>">
-                                            <input type="hidden" name="action" value="update">
-                                            <div class="input-group input-group-sm">
-                                                <input type="number" name="sale_price" class="form-control" placeholder="Nhập giá..." required>
-                                                <span class="input-group-text">đ</span>
-                                            </div>
-                                        </form>
-                                    </td>
-                                    <td class="text-end">
-                                        <button type="submit" form="form-add-<?php echo $p['id']; ?>" class="btn btn-primary btn-sm rounded-pill px-3">
-                                            Thêm
-                                        </button>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
             </div>
         </div>
     </div>
