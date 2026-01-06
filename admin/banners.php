@@ -44,20 +44,41 @@ $banners = $pdo->query("SELECT * FROM banners ORDER BY position ASC, created_at 
 require_once __DIR__ . '/includes/header.php';
 ?>
 
+<style>
+    .bg-soft-success { background-color: rgba(25, 135, 84, 0.1); }
+    .bg-soft-secondary { background-color: rgba(108, 117, 125, 0.1); }
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .banner-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .banner-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+</style>
+
 <div class="admin-wrapper">
     <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
     
     <div class="admin-content">
         <div class="mb-4">
             <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="dashboard.php" class="text-decoration-none">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Banners</li>
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="dashboard.php" class="text-decoration-none text-muted">Dashboard</a></li>
+                    <li class="breadcrumb-item active text-primary">Banners</li>
                 </ol>
             </nav>
             <div class="d-flex justify-content-between align-items-center">
-                <h4 class="fw-bold mb-0">Quản lý Banner</h4>
-                <button class="btn btn-primary shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#bannerModal" onclick="resetModal()">
+                <div>
+                    <h4 class="fw-bold mb-0">Quản lý Banner</h4>
+                    <p class="text-muted small mb-0">Quản lý các banner quảng cáo trên trang chủ</p>
+                </div>
+                <button class="btn btn-primary shadow-sm px-4 rounded-pill" data-bs-toggle="modal" data-bs-target="#bannerModal" onclick="resetModal()">
                     <i class="bi bi-plus-lg me-2"></i>Thêm Banner Mới
                 </button>
             </div>
@@ -74,14 +95,14 @@ require_once __DIR__ . '/includes/header.php';
             <?php else: ?>
                 <?php foreach ($banners as $b): ?>
                 <div class="col-md-6 col-lg-4">
-                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 banner-card">
                         <div class="position-relative">
                             <img src="<?php echo htmlspecialchars($b['image_url']); ?>" class="card-img-top" style="height: 200px; object-fit: cover;">
                             <div class="position-absolute top-0 end-0 m-3">
                                 <?php if ($b['is_active']): ?>
-                                    <span class="badge bg-success rounded-pill px-3 shadow-sm">Đang hiển thị</span>
+                                    <span class="badge bg-soft-success text-success rounded-pill px-3 border border-success">Đang hiển thị</span>
                                 <?php else: ?>
-                                    <span class="badge bg-secondary rounded-pill px-3 shadow-sm">Đã ẩn</span>
+                                    <span class="badge bg-soft-secondary text-secondary rounded-pill px-3 border border-secondary">Đã ẩn</span>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -103,13 +124,13 @@ require_once __DIR__ . '/includes/header.php';
                             </div>
 
                             <div class="d-flex gap-2">
-                                <button class="btn btn-light btn-sm flex-grow-1 fw-bold rounded-3" onclick='editBanner(<?php echo json_encode($b); ?>)'>
+                                <button class="btn btn-light btn-sm flex-grow-1 fw-bold rounded-pill border" onclick='editBanner(<?php echo json_encode($b); ?>)'>
                                     <i class="bi bi-pencil me-1"></i> Sửa
                                 </button>
                                 <form method="POST" class="flex-grow-1" onsubmit="return confirm('Xác nhận xóa banner này?')">
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?php echo $b['id']; ?>">
-                                    <button type="submit" class="btn btn-light btn-sm text-danger w-100 fw-bold rounded-3">
+                                    <button type="submit" class="btn btn-light btn-sm text-danger w-100 fw-bold rounded-pill border">
                                         <i class="bi bi-trash me-1"></i> Xóa
                                     </button>
                                 </form>
@@ -137,29 +158,29 @@ require_once __DIR__ . '/includes/header.php';
                 
                 <div class="mb-3">
                     <label class="form-label small fw-bold">Tiêu đề banner</label>
-                    <input type="text" name="title" id="bannerTitle" class="form-control" placeholder="Ví dụ: Khuyến mãi mùa hè" required>
+                    <input type="text" name="title" id="bannerTitle" class="form-control rounded-3" placeholder="Ví dụ: Khuyến mãi mùa hè" required>
                 </div>
                 
                 <div class="mb-3">
                     <label class="form-label small fw-bold">Mô tả ngắn</label>
-                    <textarea name="description" id="bannerDesc" class="form-control" rows="2" placeholder="Mô tả chương trình..."></textarea>
+                    <textarea name="description" id="bannerDesc" class="form-control rounded-3" rows="2" placeholder="Mô tả chương trình..."></textarea>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label small fw-bold">URL hình ảnh</label>
-                    <input type="text" name="image_url" id="bannerImg" class="form-control" placeholder="https://..." required>
+                    <input type="text" name="image_url" id="bannerImg" class="form-control rounded-3" placeholder="https://..." required>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label small fw-bold">Link liên kết</label>
-                    <input type="text" name="link_url" id="bannerLink" class="form-control" placeholder="https://...">
+                    <input type="text" name="link_url" id="bannerLink" class="form-control rounded-3" placeholder="https://...">
                 </div>
 
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Vị trí hiển thị</label>
-                            <input type="number" name="position" id="bannerPos" class="form-control" value="0">
+                            <input type="number" name="position" id="bannerPos" class="form-control rounded-3" value="0">
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -174,8 +195,8 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
             </div>
             <div class="modal-footer border-top p-3">
-                <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Hủy</button>
-                <button type="submit" class="btn btn-primary fw-bold">Lưu banner</button>
+                <button type="button" class="btn btn-light fw-bold rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-primary fw-bold rounded-pill px-4">Lưu banner</button>
             </div>
         </form>
     </div>

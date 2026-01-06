@@ -48,13 +48,13 @@ if (empty($_SESSION['admin_logged_in'])) {
     .admin-navbar .brand {
       font-size: 22px;
       font-weight: 800;
-      color: var(--shopee-orange);
+      color: #2c3e50;
       text-decoration: none;
       display: flex;
       align-items: center;
       letter-spacing: -0.5px;
     }
-    .admin-navbar .brand .tet-icon { margin-right: 10px; font-size: 28px; }
+    .admin-navbar .brand .brand-icon { margin-right: 10px; font-size: 28px; }
 
     /* Search Bar */
     .nav-search { max-width: 400px; width: 100%; margin-left: 40px; }
@@ -62,7 +62,7 @@ if (empty($_SESSION['admin_logged_in'])) {
     
     /* Notifications */
     .nav-link-icon { position: relative; padding: 8px; color: #65676b; font-size: 20px; transition: all 0.2s; }
-    .nav-link-icon:hover { color: var(--shopee-orange); background: #f0f2f5; border-radius: 50%; }
+    .nav-link-icon:hover { color: #3498db; background: #f0f2f5; border-radius: 50%; }
     .badge-notify { position: absolute; top: 5px; right: 5px; font-size: 10px; padding: 3px 5px; border-radius: 50%; border: 2px solid #fff; }
   </style>
 </head>
@@ -70,12 +70,8 @@ if (empty($_SESSION['admin_logged_in'])) {
 
 <div class="admin-navbar">
   <a href="dashboard.php" class="brand">
-    <span class="tet-icon">
-      <svg viewBox="0 0 24 24" width="28" height="28" style="vertical-align: middle;">
-        <rect x="5" y="3" width="14" height="18" rx="2" fill="#d32f2f"/>
-        <path d="M12,10 L19,3 L5,3 Z" fill="#b71c1c"/>
-        <circle cx="12" cy="12" r="2" fill="#ffc107"/>
-      </svg>
+    <span class="brand-icon me-2">
+      <i class="bi bi-laptop text-primary"></i>
     </span> GROWTECH <span class="ms-2 text-dark fw-light d-none d-md-inline" style="font-size: 15px; border-left: 1px solid #ddd; padding-left: 12px;">Seller Center 2026</span>
   </a>
 

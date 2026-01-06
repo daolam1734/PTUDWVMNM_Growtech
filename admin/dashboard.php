@@ -58,8 +58,21 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <style>
-    .dashboard-section { background: #fff; padding: 24px; border-radius: 16px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.04); border: 1px solid #f0f0f0; position: relative; overflow: hidden; }
-    .section-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; color: #2c3e50; display: flex; align-items: center; }
+    :root {
+        --accent-color: #2c3e50;
+        --shopee-orange: #ee4d2d;
+    }
+    .dashboard-section { 
+        background: #fff; 
+        padding: 24px; 
+        border-radius: 16px; 
+        margin-bottom: 24px; 
+        box-shadow: 0 2px 12px rgba(0,0,0,.04); 
+        border: 1px solid #f0f0f0; 
+        position: relative; 
+        overflow: hidden; 
+    }
+    .section-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; color: #2c3e50; display: flex; align-items: center; justify-content: space-between; }
     
     /* Stats Cards */
     .stat-card { border: none; border-radius: 16px; padding: 20px; height: 100%; transition: all 0.3s; background: #fff; border: 1px solid #f0f0f0; }
@@ -147,9 +160,10 @@ require_once __DIR__ . '/includes/header.php';
 
         <div class="row">
             <div class="col-lg-8">
-                <!-- To-do List Section -->
                 <div class="dashboard-section">
-                    <div class="section-title">Danh sách cần làm <span class="tet-badge">Tết Bính Ngọ 2026</span></div>
+                    <div class="section-title">
+                        <span>Danh sách cần làm <span class="tet-badge">Tết Bính Ngọ 2026</span></span>
+                    </div>
                     <div class="row g-0">
                         <div class="col">
                             <a href="orders.php?status=dang_cho" class="todo-item d-block">
@@ -207,7 +221,7 @@ require_once __DIR__ . '/includes/header.php';
                                     <th>Ngày Đặt</th>
                                     <th>Tổng Tiền</th>
                                     <th>Trạng Thái</th>
-                                    <th class="text-end">Thao tác</th>
+                                    <th class="text-end">#</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -278,7 +292,7 @@ require_once __DIR__ . '/includes/header.php';
 
                 <!-- Low Stock Alert -->
                 <div class="dashboard-section">
-                    <div class="section-title text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Sắp Hết Hàng</div>
+                    <div class="section-title text-danger"><span><i class="bi bi-exclamation-triangle me-2"></i>Sắp Hết Hàng</span></div>
                     <?php if (empty($low_stock)): ?>
                         <div class="text-center py-4">
                             <i class="bi bi-check2-circle fs-1 text-success mb-2 d-block"></i>
@@ -286,10 +300,12 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                     <?php else: ?>
                         <div class="list-group list-group-flush">
-                            <?php foreach ($low_stock as $item): ?>
+                            <?php foreach ($low_stock as $item): 
+                                $img = getProductImage($item['id']);
+                            ?>
                             <div class="list-group-item px-0 py-3 border-0 border-bottom">
                                 <div class="d-flex align-items-center">
-                                    <img src="/weblaptop/assets/images/products/<?php echo $item['image']; ?>" class="rounded-3 me-3" style="width: 44px; height: 44px; object-fit: cover;" onerror="this.src='/weblaptop/assets/images/no-image.png'">
+                                    <img src="<?php echo htmlspecialchars($img); ?>" class="rounded-3 me-3" style="width: 44px; height: 44px; object-fit: cover;" onerror="this.src='https://placehold.co/400x400?text=No+Image'">
                                     <div class="flex-grow-1 min-w-0">
                                         <div class="fw-bold small text-truncate mb-1"><?php echo htmlspecialchars($item['name']); ?></div>
                                         <div class="text-danger small fw-bold">Còn lại: <?php echo $item['stock']; ?></div>
@@ -398,4 +414,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php require_once __DIR__ . '/includes/header.php'; ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

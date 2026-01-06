@@ -26,57 +26,111 @@ require_once __DIR__ . '/includes/header.php';
     <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
     
     <div class="admin-content">
-        <div class="mb-4">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="dashboard.php" class="text-decoration-none">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Cài đặt</li>
-                </ol>
-            </nav>
-            <h4 class="fw-bold">Cài Đặt Hệ Thống</h4>
-            <p class="text-muted small">Cấu hình các thông tin cơ bản của website.</p>
+        <!-- Header Section -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item small"><a href="dashboard.php" class="text-decoration-none text-muted">Bảng điều khiển</a></li>
+                        <li class="breadcrumb-item small active" aria-current="page">Cấu hình hệ thống</li>
+                    </ol>
+                </nav>
+                <h4 class="fw-bold mb-0">Cài Đặt Tổng Quan</h4>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm bg-white" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+                </button>
+            </div>
         </div>
 
-        <div class="row">
+        <div class="row g-4">
             <div class="col-lg-8">
-                <div class="card border-0 shadow-sm rounded-4">
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-gear me-2 text-primary"></i>Thông tin website</h6>
+                    </div>
                     <div class="card-body p-4">
                         <form method="POST">
                             <?php foreach ($settings as $s): ?>
                                 <div class="mb-4">
-                                    <label class="form-label small fw-bold text-uppercase text-muted"><?php echo htmlspecialchars($s['description'] ?: $s['key']); ?></label>
+                                    <label class="form-label small fw-bold text-dark mb-1">
+                                        <?php echo htmlspecialchars($s['description'] ?: $s['key']); ?>
+                                    </label>
                                     <?php if ($s['key'] === 'flash_sale_end'): ?>
-                                        <input type="datetime-local" name="settings[<?php echo $s['key']; ?>]" class="form-control" value="<?php echo date('Y-m-d\TH:i', strtotime($s['value'])); ?>">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-clock"></i></span>
+                                            <input type="datetime-local" name="settings[<?php echo $s['key']; ?>]" class="form-control bg-light border-start-0" value="<?php echo date('Y-m-d\TH:i', strtotime($s['value'])); ?>">
+                                        </div>
                                     <?php elseif (strpos($s['key'], 'description') !== false || $s['key'] === 'site_footer'): ?>
-                                        <textarea name="settings[<?php echo $s['key']; ?>]" class="form-control" rows="3"><?php echo htmlspecialchars($s['value']); ?></textarea>
+                                        <textarea name="settings[<?php echo $s['key']; ?>]" class="form-control bg-light" rows="3" placeholder="Nhập nội dung..."><?php echo htmlspecialchars($s['value']); ?></textarea>
                                     <?php else: ?>
-                                        <input type="text" name="settings[<?php echo $s['key']; ?>]" class="form-control" value="<?php echo htmlspecialchars($s['value']); ?>">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-pencil-square"></i></span>
+                                            <input type="text" name="settings[<?php echo $s['key']; ?>]" class="form-control bg-light border-start-0" value="<?php echo htmlspecialchars($s['value']); ?>">
+                                        </div>
                                     <?php endif; ?>
-                                    <div class="form-text x-small">Key: <code><?php echo $s['key']; ?></code></div>
+                                    <div class="d-flex justify-content-between mt-1">
+                                        <div class="text-muted" style="font-size: 11px;">Mã khóa: <code><?php echo $s['key']; ?></code></div>
+                                        <div class="text-primary" style="font-size: 11px;">Hệ thống</div>
+                                    </div>
                                 </div>
                             <?php endforeach; ?>
                             
-                            <hr class="my-4">
-                            <button type="submit" name="update_settings" class="btn btn-primary px-5 fw-bold">
-                                <i class="bi bi-save me-2"></i>Lưu thay đổi
-                            </button>
+                            <div class="pt-3 border-top mt-4 d-flex justify-content-end">
+                                <button type="submit" name="update_settings" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">
+                                    <i class="bi bi-check2-all me-2"></i>Cập nhật tất cả thay đổi
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
             </div>
             
             <div class="col-lg-4">
-                <div class="card border-0 shadow-sm rounded-4 bg-primary text-white mb-4">
-                    <div class="card-body p-4">
-                        <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Hướng dẫn</h6>
-                        <p class="small mb-0 opacity-75">
-                            Các thông tin này sẽ được hiển thị trên toàn bộ website. Hãy đảm bảo thông tin liên hệ là chính xác để khách hàng có thể kết nối với shop.
+                <div class="card border-0 shadow-sm rounded-4 bg-dark text-white mb-4 overflow-hidden">
+                    <div class="card-body p-4 position-relative" style="z-index: 1;">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-shield-lock me-2"></i>Lưu ý quan trọng</h6>
+                        <p class="small mb-3 opacity-75">
+                            Các thông tin cấu hình này ảnh hưởng trực tiếp đến giao diện người dùng và hoạt động của hệ thống.
                         </p>
+                        <ul class="small opacity-75 ps-3 mb-0">
+                            <li class="mb-2">Kiểm tra kỹ định dạng Email/Số điện thoại.</li>
+                            <li class="mb-2">Cấu hình SEO giúp website lên hạng tìm kiếm.</li>
+                            <li>Thông tin này hiển thị ở chân trang (Footer).</li>
+                        </ul>
+                        <i class="bi bi-gear-fill position-absolute" style="right: -20px; bottom: -20px; font-size: 100px; opacity: 0.1;"></i>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-hdd-network me-2"></i>Trạng thái máy chủ</h6>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-grow-1 small fw-bold">Kết nối Database</div>
+                            <span class="badge bg-soft-success text-success rounded-pill px-3 border border-success">Hoạt động</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-grow-1 small fw-bold">PHP Version</div>
+                            <span class="badge bg-soft-primary text-primary rounded-pill px-3 border border-primary"><?php echo PHP_VERSION; ?></span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1 small fw-bold">Môi trường</div>
+                            <span class="badge bg-soft-info text-info rounded-pill px-3 border border-info">Production</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.bg-soft-success { background-color: rgba(25, 135, 84, 0.1); }
+.bg-soft-primary { background-color: rgba(13, 110, 253, 0.1); }
+.bg-soft-info { background-color: rgba(13, 202, 240, 0.1); }
+.input-group-text { border-color: #dee2e6; color: #6c757d; }
+.form-control:focus { box-shadow: none; border-color: var(--accent-color); }
+</style>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

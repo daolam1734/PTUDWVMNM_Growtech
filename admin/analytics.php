@@ -92,18 +92,23 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <style>
-    .analytics-card { background: #fff; padding: 24px; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.04); margin-bottom: 24px; border: 1px solid #f0f0f0; }
-    .card-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; color: #2c3e50; display: flex; align-items: center; }
-    .card-title i { margin-right: 10px; color: #2c3e50; }
+    .analytics-card { background: #fff; padding: 24px; border-radius: 1.25rem; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.04); margin-bottom: 24px; border: 1px solid rgba(0,0,0,0.05); }
+    .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; color: #1e293b; display: flex; align-items: center; }
+    .card-title i { margin-right: 0.75rem; font-size: 1.25rem; }
     
-    .stat-box { background: #fff; padding: 24px; border-radius: 16px; text-align: center; border: 1px solid #f0f0f0; transition: all 0.3s; height: 100%; box-shadow: 0 2px 8px rgba(0,0,0,.02); }
+    .stat-box { background: #fff; padding: 24px; border-radius: 1.25rem; text-align: left; border: 1px solid rgba(0,0,0,0.05); transition: all 0.3s; height: 100%; position: relative; overflow: hidden; }
     .stat-box:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,.05); }
-    .stat-value { font-size: 24px; font-weight: 800; color: #2c3e50; margin-bottom: 4px; }
-    .stat-label { font-size: 13px; color: #6c757d; font-weight: 500; margin-bottom: 8px; }
+    .stat-value { font-size: 1.75rem; font-weight: 800; color: #1e293b; margin-bottom: 0.25rem; line-height: 1.2; }
+    .stat-label { font-size: 0.875rem; color: #64748b; font-weight: 600; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.025em; }
     .chart-container { position: relative; height: 320px; width: 100%; }
     
-    .table-modern thead th { background: #f8f9fa; color: #6c757d; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border: none; padding: 15px; }
-    .table-modern tbody td { padding: 15px; font-size: 14px; border-bottom: 1px solid #f8f9fa; vertical-align: middle; }
+    .bg-soft-primary { background-color: rgba(13, 110, 253, 0.1) !important; color: #0d6efd !important; }
+    .bg-soft-success { background-color: rgba(25, 135, 84, 0.1) !important; color: #198754 !important; }
+    .bg-soft-warning { background-color: rgba(255, 193, 7, 0.1) !important; color: #ffc107 !important; }
+    .bg-soft-danger { background-color: rgba(220, 53, 69, 0.1) !important; color: #dc3545 !important; }
+    .bg-soft-info { background-color: rgba(13, 202, 240, 0.1) !important; color: #0dcaf0 !important; }
+
+    .stat-icon-bg { position: absolute; right: -10px; bottom: -10px; font-size: 80px; opacity: 0.05; transform: rotate(-15deg); }
 </style>
 
 <div class="admin-wrapper">
@@ -112,19 +117,23 @@ require_once __DIR__ . '/includes/header.php';
     <div class="admin-content">
         <div class="mb-4">
             <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="dashboard.php" class="text-decoration-none">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Phân tích</li>
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item small"><a href="dashboard.php" class="text-decoration-none text-muted">Bảng điều khiển</a></li>
+                    <li class="breadcrumb-item small active" aria-current="page">Phân tích dữ liệu</li>
                 </ol>
             </nav>
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h4 class="fw-bold mb-1">Phân Tích Bán Hàng</h4>
-                    <p class="text-muted small mb-0">Dữ liệu chi tiết về hiệu quả kinh doanh của shop.</p>
+                    <h4 class="fw-bold mb-0">Trung Tâm Phân Tích</h4>
+                    <p class="text-muted small mb-0">Dữ liệu chi tiết về hiệu quả kinh doanh của shop trong năm 2026.</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <div class="text-muted small align-self-center me-2 bg-white px-3 py-2 rounded-3 border shadow-sm">Cập nhật: <span class="fw-bold"><?php echo date('H:i d/m/Y'); ?></span></div>
-                    <button class="btn btn-primary shadow-sm btn-sm px-3 rounded-3"><i class="bi bi-download me-2"></i>Tải báo cáo</button>
+                    <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm bg-white" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+                    </button>
+                    <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+                        <i class="bi bi-cloud-download me-1"></i> Xuất Excel
+                    </button>
                 </div>
             </div>
         </div>
@@ -133,37 +142,40 @@ require_once __DIR__ . '/includes/header.php';
         <div class="row g-4 mb-4">
             <div class="col-md-3">
                 <div class="stat-box">
-                    <div class="stat-label">Doanh thu (Tháng này)</div>
+                    <div class="stat-label">Doanh thu tháng này</div>
                     <div class="stat-value">
                         <?php 
                         $monthly_rev = $pdo->query("SELECT SUM(total) FROM orders WHERE MONTH(created_at) = MONTH(CURDATE()) AND order_status NOT IN ('huy', 'tra_lai')")->fetchColumn();
                         echo number_format($monthly_rev ?: 0, 0, ',', '.'); 
                         ?>đ
                     </div>
-                    <div class="small text-success fw-bold"><i class="bi bi-arrow-up-short fs-5"></i> 8.2%</div>
+                    <div class="small fw-bold text-success"><i class="bi bi-graph-up-arrow me-1"></i> +8.2% <span class="fw-normal text-muted ms-1">so với t.trước</span></div>
+                    <i class="bi bi-currency-dollar stat-icon-bg"></i>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-box">
-                    <div class="stat-label">Đơn hàng mới (Hôm nay)</div>
+                    <div class="stat-label">Đơn hàng mới hôm nay</div>
                     <div class="stat-value">
                         <?php echo $today_orders; ?>
                     </div>
-                    <div class="small text-success fw-bold"><i class="bi bi-arrow-up-short fs-5"></i> 5.4%</div>
+                    <div class="small fw-bold text-primary"><i class="bi bi-cart-check me-1"></i> +5.4% <span class="fw-normal text-muted ms-1">so với hôm qua</span></div>
+                    <i class="bi bi-cart3 stat-icon-bg"></i>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="stat-box">
-                    <div class="stat-label">Khách hàng mới (Tháng này)</div>
+                <div class="stat-box border-soft-danger">
+                    <div class="stat-label">Khách hàng mới t.này</div>
                     <div class="stat-value">
                         <?php echo $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'user' AND MONTH(created_at) = MONTH(CURDATE())")->fetchColumn(); ?>
                     </div>
-                    <div class="small text-danger fw-bold"><i class="bi bi-arrow-down-short fs-5"></i> 1.2%</div>
+                    <div class="small fw-bold text-danger"><i class="bi bi-graph-down-arrow me-1"></i> -1.2% <span class="fw-normal text-muted ms-1">so với t.trước</span></div>
+                    <i class="bi bi-people stat-icon-bg"></i>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-box">
-                    <div class="stat-label">Tỷ lệ hủy đơn</div>
+                    <div class="stat-label">Tỷ lệ hủy đơn hàng</div>
                     <div class="stat-value">
                         <?php 
                         $total = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
@@ -171,7 +183,8 @@ require_once __DIR__ . '/includes/header.php';
                         echo $total > 0 ? round(($cancelled / $total) * 100, 1) : 0;
                         ?>%
                     </div>
-                    <div class="small text-success fw-bold"><i class="bi bi-check-circle me-1"></i> Ổn định</div>
+                    <div class="small fw-bold text-info"><i class="bi bi-info-circle me-1"></i> Mức an toàn <span class="fw-normal text-muted ms-1">(Dưới 3%)</span></div>
+                    <i class="bi bi-x-circle stat-icon-bg"></i>
                 </div>
             </div>
         </div>
@@ -180,7 +193,10 @@ require_once __DIR__ . '/includes/header.php';
             <div class="col-lg-8">
                 <!-- Revenue Chart -->
                 <div class="analytics-card">
-                    <div class="card-title"><i class="bi bi-graph-up"></i> Biểu đồ doanh thu (7 ngày qua)</div>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="card-title mb-0"><i class="bi bi-activity text-primary"></i> Biểu đồ doanh thu 7 ngày</div>
+                        <div class="badge bg-soft-primary px-3 py-2 rounded-pill">Theo ngày</div>
+                    </div>
                     <div class="chart-container">
                         <canvas id="revenueChart"></canvas>
                     </div>
@@ -188,24 +204,31 @@ require_once __DIR__ . '/includes/header.php';
 
                 <!-- Top Products -->
                 <div class="analytics-card">
-                    <div class="card-title"><i class="bi bi-star"></i> Sản phẩm bán chạy nhất</div>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="card-title mb-0"><i class="bi bi-lightning-charge text-warning"></i> Sản phẩm "Bùng Nổ" nhất</div>
+                        <a href="products.php" class="small text-decoration-none">Xem tất cả</a>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-modern align-middle">
+                        <table class="table table-modern align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th>Sản phẩm</th>
-                                    <th class="text-center">Đã bán</th>
-                                    <th class="text-end">Doanh thu</th>
-                                    <th class="text-end">Xu hướng</th>
+                                    <th class="ps-0">Tên sản phẩm</th>
+                                    <th class="text-center">Số lượng</th>
+                                    <th class="text-end">Doanh thu tạm tính</th>
+                                    <th class="text-end pe-0">Hiệu suất</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($top_products as $p): ?>
                                 <tr>
-                                    <td class="fw-bold text-dark text-truncate" style="max-width: 250px;"><?php echo htmlspecialchars($p['name']); ?></td>
-                                    <td class="text-center"><span class="badge bg-light text-dark rounded-pill px-3"><?php echo $p['total_sold']; ?></span></td>
+                                    <td class="ps-0 fw-bold text-dark text-truncate" style="max-width: 280px;"><?php echo htmlspecialchars($p['name']); ?></td>
+                                    <td class="text-center"><span class="badge bg-soft-primary rounded-pill px-3"><?php echo $p['total_sold']; ?> sp</span></td>
                                     <td class="text-end fw-bold text-primary"><?php echo number_format($p['total_revenue'], 0, ',', '.'); ?>đ</td>
-                                    <td class="text-end text-success"><i class="bi bi-caret-up-fill"></i></td>
+                                    <td class="text-end pe-0">
+                                        <div class="d-flex align-items-center justify-content-end text-success fw-bold small">
+                                            <i class="bi bi-arrow-up-right me-1"></i> Tốt
+                                        </div>
+                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -217,7 +240,7 @@ require_once __DIR__ . '/includes/header.php';
             <div class="col-lg-4">
                 <!-- Status Distribution -->
                 <div class="analytics-card">
-                    <div class="card-title"><i class="bi bi-pie-chart"></i> Trạng thái đơn hàng</div>
+                    <div class="card-title mb-4"><i class="bi bi-funnel text-info"></i> Luồng đơn hàng</div>
                     <div class="chart-container" style="height: 280px;">
                         <canvas id="statusChart"></canvas>
                     </div>
@@ -225,20 +248,20 @@ require_once __DIR__ . '/includes/header.php';
 
                 <!-- Category Performance -->
                 <div class="analytics-card">
-                    <div class="card-title"><i class="bi bi-tags"></i> Hiệu quả theo danh mục</div>
-                    <div class="list-group list-group-flush">
+                    <div class="card-title mb-3"><i class="bi bi-grid-1x2 text-success"></i> Tỷ trọng ngành hàng</div>
+                    <div class="list-group list-group-flush mt-2">
                         <?php foreach ($category_stats as $cat): ?>
                         <div class="list-group-item px-0 py-3 border-0 border-bottom">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="small fw-bold text-dark"><?php echo htmlspecialchars($cat['name']); ?></span>
                                 <span class="small text-muted"><?php echo $cat['total_sold']; ?> đã bán</span>
                             </div>
-                            <div class="progress rounded-pill" style="height: 6px;">
+                            <div class="progress rounded-pill bg-light" style="height: 8px;">
                                 <?php 
                                 $max_sold = isset($category_stats[0]['total_sold']) ? ($category_stats[0]['total_sold'] ?: 1) : 1;
                                 $percent = ($cat['total_sold'] / $max_sold) * 100;
                                 ?>
-                                <div class="progress-bar bg-primary rounded-pill" style="width: <?php echo $percent; ?>%"></div>
+                                <div class="progress-bar bg-primary rounded-pill shadow-sm" style="width: <?php echo $percent; ?>%"></div>
                             </div>
                         </div>
                         <?php endforeach; ?>

@@ -283,15 +283,6 @@ if ($is_filtered) {
     @media (max-width: 576px) {
         .suggestion-grid { grid-template-columns: repeat(2, 1fr); }
     }
-
-    /* Home Filter Bar */
-    .home-filter-bar { background: #fff; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #eee; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    .filter-item { border: 1px solid #f0f0f0; border-radius: 8px; padding: 4px 12px; background: #fff; transition: all 0.2s; position: relative; }
-    .filter-item:hover { border-color: var(--tet-red); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .filter-select { border: none; background: transparent; font-size: 13px; font-weight: 600; color: #444; width: 100%; outline: none; cursor: pointer; padding: 2px 0; -webkit-appearance: none; }
-    .filter-label { font-size: 10px; color: #999; text-transform: uppercase; font-weight: 700; margin-bottom: 0px; display: block; }
-    .btn-apply-filters { background: var(--tet-red); color: #fff; border: none; border-radius: 8px; height: 100%; width: 100%; font-weight: 700; font-size: 14px; transition: all 0.3s; }
-    .btn-apply-filters:hover { background: var(--tet-dark-red); transform: scale(1.02); color: #fff; }
 </style>
 
 <div class="row">
@@ -341,97 +332,6 @@ if ($is_filtered) {
                 <button class="carousel-control-next" type="button" data-bs-target="#homeCarousel" data-bs-slide="next">
                     <span class="carousel-control-next-icon"></span>
                 </button>
-            </div>
-
-            <!-- Home Filter Bar -->
-            <div class="home-filter-bar shadow-sm">
-                <form action="search.php" method="GET" class="row g-2 align-items-center">
-                    <div class="col-md-2">
-                        <div class="filter-item">
-                            <span class="filter-label">Thương hiệu</span>
-                            <select name="brand" class="filter-select">
-                                <option value="">Tất cả</option>
-                                <?php
-                                $filter_brands = $pdo->query("SELECT * FROM brands WHERE name IN ('Dell', 'Lenovo', 'Acer', 'HP', 'Asus', 'Apple') ORDER BY name ASC")->fetchAll();
-                                foreach ($filter_brands as $fb) {
-                                    echo '<option value="' . htmlspecialchars($fb['name']) . '">' . htmlspecialchars($fb['name']) . '</option>';
-                                }
-                                ?>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="filter-item">
-                            <span class="filter-label">Mức giá</span>
-                            <select name="price" class="filter-select">
-                                <option value="">Tất cả mức giá</option>
-                                <option value="0-10">Dưới 10 triệu</option>
-                                <option value="10-15">10 - 15 triệu</option>
-                                <option value="15-20">15 - 20 triệu</option>
-                                <option value="20-30">20 - 30 triệu</option>
-                                <option value="30-50">30 - 50 triệu</option>
-                                <option value="50+">Trên 50 triệu</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="filter-item">
-                            <span class="filter-label">CPU</span>
-                            <select name="cpu" class="filter-select">
-                                <option value="">Tất cả CPU</option>
-                                <option value="i3">Core i3</option>
-                                <option value="i5">Core i5</option>
-                                <option value="i7">Core i7</option>
-                                <option value="i9">Core i9</option>
-                                <option value="ryzen3">Ryzen 3</option>
-                                <option value="ryzen5">Ryzen 5</option>
-                                <option value="ryzen7">Ryzen 7</option>
-                                <option value="m1">Apple M1</option>
-                                <option value="m2">Apple M2</option>
-                                <option value="m3">Apple M3</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-1">
-                        <div class="filter-item">
-                            <span class="filter-label">RAM</span>
-                            <select name="ram" class="filter-select">
-                                <option value="">Tất cả</option>
-                                <option value="8">8GB</option>
-                                <option value="16">16GB</option>
-                                <option value="32">32GB</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="filter-item">
-                            <span class="filter-label">Ổ cứng</span>
-                            <select name="storage" class="filter-select">
-                                <option value="">Tất cả</option>
-                                <option value="256">SSD 256GB</option>
-                                <option value="512">SSD 512GB</option>
-                                <option value="1024">SSD 1TB</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-1">
-                        <div class="filter-item">
-                            <span class="filter-label">Màn hình</span>
-                            <select name="screen" class="filter-select">
-                                <option value="">Tất cả</option>
-                                <option value="13">13"</option>
-                                <option value="14">14"</option>
-                                <option value="15">15"</option>
-                                <option value="16">16"+</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn-apply-filters py-2">
-                            <i class="bi bi-filter"></i> Lọc ngay
-                        </button>
-                    </div>
-                </form>
             </div>
 
             <!-- Flash Sale Section -->
