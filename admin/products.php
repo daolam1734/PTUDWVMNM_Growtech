@@ -38,14 +38,12 @@ require_once __DIR__ . '/includes/header.php';
         border-bottom: 1px solid #f1f1f1;
         vertical-align: middle;
     }
-    .product-img { width: 45px; height: 45px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
-    .search-bar { background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #eee; }
-    .filter-label { font-size: 13px; font-weight: 600; color: #495057; margin-bottom: 8px; display: block; }
-    
-    .stock-badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
-    .stock-low { background: #fff4e5; color: #ff9800; }
-    .stock-out { background: #ffebee; color: #f44336; }
-    .stock-good { background: #e8f5e9; color: #4caf50; }
+    .product-img { width: 50px; height: 50px; object-fit: contain; border-radius: 8px; background: #fff; padding: 2px; }
+    .product-name-link { transition: color 0.2s; }
+    .product-name-link:hover { color: #0d6efd !important; }
+    .table-hover tbody tr:hover { background-color: #fcfcfc; }
+    .btn-action { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s; }
+    .btn-action:hover { transform: translateY(-2px); }
 </style>
 
 <div class="admin-wrapper">
@@ -114,8 +112,9 @@ require_once __DIR__ . '/includes/header.php';
                             <th class="ps-4 py-3 text-muted small fw-bold text-uppercase">Sản phẩm</th>
                             <th class="py-3 text-muted small fw-bold text-uppercase">Danh mục</th>
                             <th class="py-3 text-muted small fw-bold text-uppercase">Giá bán</th>
-                            <th class="py-3 text-muted small fw-bold text-uppercase">Kho hàng</th>
-                            <th class="pe-4 py-3 text-muted small fw-bold text-uppercase text-end">Thao tác</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase text-center">Tình trạng</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase">Kho</th>
+                            <th class="pe-4 py-3 text-muted small fw-bold text-uppercase text-end">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -128,29 +127,42 @@ require_once __DIR__ . '/includes/header.php';
                         <tr>
                             <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <img src="<?php echo htmlspecialchars($img); ?>" class="rounded-3 me-3" style="width: 48px; height: 48px; object-fit: cover; border: 1px solid #f0f0f0;" onerror="this.src='/weblaptop/assets/images/no-image.png'">
+                                    <div class="position-relative">
+                                        <img src="<?php echo htmlspecialchars($img); ?>" class="product-img me-3 border" onerror="this.src='https://placehold.co/100x100?text=No+Img'">
+                                        <?php if ($p['sale_price'] && $p['sale_price'] < $p['price']): ?>
+                                            <span class="position-absolute top-0 start-0 badge bg-danger rounded-circle p-1" style="font-size: 8px;"><i class="bi bi-lightning-fill"></i></span>
+                                        <?php endif; ?>
+                                    </div>
                                     <div>
-                                        <div class="fw-bold text-dark text-truncate" style="max-width: 250px;"><?php echo htmlspecialchars($p['name']); ?></div>
-                                        <div class="small text-muted">SKU: <?php echo htmlspecialchars($p['sku'] ?: 'N/A'); ?> | <?php echo htmlspecialchars($p['brand_name']); ?></div>
+                                        <a href="../product.php?id=<?php echo $p['id']; ?>" target="_blank" class="fw-bold text-dark text-decoration-none product-name-link d-block" style="max-width: 250px;"><?php echo htmlspecialchars($p['name']); ?></a>
+                                        <div class="small text-muted" style="font-size: 11px;">SKU: <span class="text-dark fw-500"><?php echo htmlspecialchars($p['sku'] ?: 'N/A'); ?></span> | <?php echo htmlspecialchars($p['brand_name']); ?></div>
                                     </div>
                                 </div>
                             </td>
-                            <td><span class="badge bg-light text-dark fw-normal border rounded-pill px-3"><?php echo htmlspecialchars($p['category_name']); ?></span></td>
+                            <td><span class="badge bg-light text-dark fw-normal border px-2 py-1"><?php echo htmlspecialchars($p['category_name']); ?></span></td>
                             <td>
-                                <div class="fw-bold text-primary"><?php echo number_format($p['price']); ?>đ</div>
+                                <div class="fw-bold text-primary"><?php echo number_format($p['price'], 0, ',', '.'); ?>đ</div>
                                 <?php if ($p['sale_price'] && $p['sale_price'] < $p['price']): ?>
-                                    <div class="small text-muted text-decoration-line-through"><?php echo number_format($p['sale_price']); ?>đ</div>
+                                    <div class="small text-muted text-decoration-line-through" style="font-size: 11px;"><?php echo number_format($p['sale_price'], 0, ',', '.'); ?>đ</div>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-center">
+                                <?php if ($p['is_active']): ?>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2">Hoạt động</span>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2">Ẩn</span>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <span class="stock-badge <?php echo $stock_class; ?>">
-                                    <?php echo $p['stock']; ?> sản phẩm
+                                    <?php echo $p['stock']; ?> sp
                                 </span>
                             </td>
                             <td class="pe-4 text-end">
-                                <div class="d-flex justify-content-end gap-2">
-                                    <a href="edit_product.php?id=<?php echo $p['id']; ?>" class="btn btn-light btn-sm rounded-3 border-0" title="Chỉnh sửa"><i class="bi bi-pencil"></i></a>
-                                    <a href="delete_product.php?id=<?php echo $p['id']; ?>" class="btn btn-light btn-sm rounded-3 border-0 text-danger" title="Xóa" onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')"><i class="bi bi-trash"></i></a>
+                                <div class="d-flex justify-content-end gap-1">
+                                    <a href="../product.php?id=<?php echo $p['id']; ?>" target="_blank" class="btn btn-action btn-outline-info border-0" title="Xem nhanh"><i class="bi bi-eye"></i></a>
+                                    <a href="edit_product.php?id=<?php echo $p['id']; ?>" class="btn btn-action btn-outline-primary border-0" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                    <a href="delete_product.php?id=<?php echo $p['id']; ?>" class="btn btn-action btn-outline-danger border-0" title="Xóa" onclick="return confirm('Xóa sản phẩm này?')"><i class="bi bi-trash"></i></a>
                                 </div>
                             </td>
                         </tr>

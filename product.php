@@ -5,6 +5,7 @@ require_once __DIR__ . "/functions.php";
 $id = isset($_GET["id"]) ? (int)$_GET["id"] : 0;
 $product = getProduct($id);
 $specs = getProductSpecs($id);
+$images = getProductImages($id);
 
 require_once __DIR__ . "/includes/header.php";
 
@@ -16,73 +17,156 @@ if (!$product) {
 ?>
 
 <style>
-    .product-detail-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee; }
-    .product-price { font-size: 32px; color: var(--tet-red, #d32f2f); background: #fff5f5; padding: 15px 20px; margin: 20px 0; border-radius: 4px; font-weight: bold; }
-    .spec-table th { width: 30%; background: #fdfdfd; color: #666; font-weight: 600; }
-    .spec-table td { color: #333; }
-    .btn-add-cart { border-color: var(--tet-red, #d32f2f); color: var(--tet-red, #d32f2f); transition: all 0.3s; }
-    .btn-add-cart:hover { background: #fff5f5; border-color: var(--tet-red, #d32f2f); color: var(--tet-red, #d32f2f); }
-    .btn-buy-now { background-color: var(--tet-red, #d32f2f); border: none; transition: all 0.3s; }
-    .btn-buy-now:hover { background-color: var(--tet-dark-red, #b71c1c); transform: translateY(-2px); }
+    .product-detail-card { background: #fff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #eee; }
+    .product-price { font-size: 32px; color: #d32f2f; background: #fff5f5; padding: 15px 20px; margin: 20px 0; border-radius: 12px; font-weight: bold; }
+    .main-img-container { height: 400px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 12px; overflow: hidden; margin-bottom: 15px; border: 1px solid #f0f0f0; }
+    .main-img-container img { max-height: 100%; max-width: 100%; object-fit: contain; }
+    .thumb-img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+    .thumb-img:hover, .thumb-img.active { border-color: #d32f2f; }
+    .spec-table { border-radius: 12px; overflow: hidden; border: 1px solid #eee; }
+    .spec-table th { width: 35%; background: #f8f9fa; color: #555; font-weight: 600; padding: 12px 20px; }
+    .spec-table td { color: #333; padding: 12px 20px; }
+    .btn-add-cart { border: 2px solid #d32f2f; color: #d32f2f; font-weight: bold; transition: all 0.3s; border-radius: 10px; }
+    .btn-add-cart:hover { background: #d32f2f; color: #fff; }
+    .btn-buy-now { background-color: #d32f2f; border: none; font-weight: bold; transition: all 0.3s; border-radius: 10px; }
+    .btn-buy-now:hover { background-color: #b71c1c; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); }
+    .badge-stock { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
 </style>
 
 <div class="container py-4">
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/weblaptop" class="text-decoration-none text-danger">Trang chủ</a></li>
-            <li class="breadcrumb-item active"><?php echo htmlspecialchars($product["name"]); ?></li>
+            <li class="breadcrumb-item"><a href="/weblaptop" class="text-decoration-none text-muted">Trang chủ</a></li>
+            <li class="breadcrumb-item active text-dark fw-bold"><?php echo htmlspecialchars($product["name"]); ?></li>
         </ol>
     </nav>
 
-    <div class="product-detail-card mb-4">
-        <div class="row">
+    <div class="product-detail-card mb-5">
+        <div class="row g-4">
             <div class="col-md-5">
-                <img src="<?php echo htmlspecialchars(getProductImage($product["id"])); ?>" class="img-fluid rounded border" alt="<?php echo htmlspecialchars($product["name"]); ?>">
+                <div class="main-img-container">
+                    <img id="mainImage" src="<?php echo htmlspecialchars(getProductImage($product["id"])); ?>" alt="<?php echo htmlspecialchars($product["name"]); ?>">
+                </div>
+                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                    <?php if (!empty($images)): ?>
+                        <?php foreach ($images as $index => $img): ?>
+                            <img src="<?php echo htmlspecialchars($img['url']); ?>" 
+                                 class="thumb-img <?php echo $index === 0 ? 'active' : ''; ?>" 
+                                 onclick="changeMainImage(this.src, this)"
+                                 alt="Thumbnail <?php echo $index + 1; ?>">
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
             </div>
-            <div class="col-md-7">
-                <h2 class="fw-bold fs-4 mb-3"><?php echo htmlspecialchars($product["name"]); ?></h2>
+            <div class="col-md-7 ps-md-5">
+                <div class="mb-2">
+                    <span class="badge bg-light text-primary border me-2 small">Mới 100%</span>
+                    <span class="badge bg-light text-success border small">Chính hãng</span>
+                </div>
+                <h1 class="fw-bold fs-3 mb-3"><?php echo htmlspecialchars($product["name"]); ?></h1>
+                
                 <div class="d-flex align-items-center mb-3">
-                    <span class="text-warning me-2">4.5 <span class="sparkle-effect"></span></span>
-                    <span class="border-start ps-2 text-muted">120 Đánh giá</span>
-                    <span class="border-start ps-2 ms-2 text-muted">500 Đã bán</span>
+                    <div class="text-warning me-3">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-half"></i>
+                        <span class="ms-1 text-dark fw-bold">4.5</span>
+                    </div>
+                    <span class="text-muted border-start ps-3">120 Đánh giá</span>
+                    <span class="text-muted border-start ps-3 ms-3">500 Đã bán</span>
                 </div>
 
-                <div class="product-price">
+                <div class="product-price d-flex align-items-center">
                     <?php echo number_format($product["price"], 0, ",", "."); ?> đ
+                    <?php if ($product['old_price'] ?? false): ?>
+                        <span class="text-muted text-decoration-line-through fs-6 ms-3"><?php echo number_format($product['old_price'], 0, ",", "."); ?> đ</span>
+                    <?php endif; ?>
                 </div>
 
-                <div class="mb-4">
-                    <div class="row mb-3">
-                        <div class="col-3 text-muted">Vận chuyển</div>
-                        <div class="col-9">
-                            <span class="sparkle-effect me-2 text-danger"></span> Miễn phí vận chuyển cho đơn hàng trên 10tr
+                <div class="card bg-light border-0 rounded-4 mb-4">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center text-danger fw-bold mb-2">
+                            <i class="bi bi-truck me-2"></i> Chính sách vận chuyển
                         </div>
+                        <ul class="list-unstyled mb-0 small text-muted">
+                            <li class="mb-1"><i class="bi bi-check2-circle text-success me-2"></i>Miễn phí vận chuyển cho đơn hàng trên 10tr</li>
+                            <li><i class="bi bi-check2-circle text-success me-2"></i>Giao hàng hỏa tốc trong 2h tại TP.HCM & Hà Nội</li>
+                        </ul>
                     </div>
                 </div>
 
-                <form id="add-to-cart-form" class="mt-4">
+                <form id="add-to-cart-form">
                     <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
-                    <div class="row align-items-center mb-4">
-                        <div class="col-3 text-muted">Số lượng</div>
-                        <div class="col-9 d-flex align-items-center">
-                            <div class="input-group w-auto me-3">
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="changeQty(-1)">-</button>
-                                <input type="number" name="qty" id="product-qty" value="1" min="1" max="<?php echo (int)$product["stock"]; ?>" class="form-control text-center" style="width: 60px;">
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="changeQty(1)">+</button>
-                            </div>
-                            <span class="text-muted small"><?php echo (int)$product["stock"]; ?> sản phẩm có sẵn</span>
+                    <div class="d-flex align-items-center mb-4">
+                        <label class="text-muted me-4">Số lượng:</label>
+                        <div class="input-group w-auto me-4 border rounded-3 overflow-hidden" style="width: 130px !important;">
+                            <button type="button" class="btn btn-light border-0" onclick="changeQty(-1)">-</button>
+                            <input type="number" name="qty" id="product-qty" value="1" min="1" max="<?php echo (int)$product["stock"]; ?>" class="form-control text-center border-0" style="width: 60px;">
+                            <button type="button" class="btn btn-light border-0" onclick="changeQty(1)">+</button>
                         </div>
+                        <span class="text-muted small"><?php echo (int)$product["stock"]; ?> sản phẩm có sẵn</span>
                     </div>
-                    <div class="d-flex gap-3">
-                        <button type="button" id="btn-add-cart" class="btn btn-outline-danger btn-add-cart px-4 py-2">
-                            <span class="sparkle-effect me-2"></span> Thêm Vào Giỏ Hàng
-                        </button>
-                        <button type="button" id="btn-buy-now" class="btn btn-danger btn-buy-now px-5 py-2">Mua Ngay</button>
+                    
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <button type="button" id="btn-add-cart" class="btn btn-outline-danger btn-add-cart w-100 py-3">
+                                <i class="bi bi-cart-plus me-2"></i> Thêm vào giỏ hàng
+                            </button>
+                        </div>
+                        <div class="col-sm-6">
+                            <button type="button" id="btn-buy-now" class="btn btn-danger btn-buy-now w-100 py-3">
+                                Mua ngay
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <!-- Collapsible Sections or Tabs -->
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="product-detail-card mb-4">
+                <h5 class="fw-bold mb-4"><i class="bi bi-body-text me-2 text-danger"></i>Mô tả sản phẩm</h5>
+                <div class="product-description text-muted">
+                    <?php echo nl2br(htmlspecialchars($product["description"])); ?>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="product-detail-card">
+                <h5 class="fw-bold mb-4"><i class="bi bi-cpu me-2 text-danger"></i>Thông số kỹ thuật</h5>
+                <table class="table table-borderless spec-table mb-0">
+                    <tbody>
+                        <?php if ($specs): ?>
+                            <tr><th>CPU</th><td><?php echo htmlspecialchars($specs['cpu'] ?: 'Đang cập nhật'); ?></td></tr>
+                            <tr><th>RAM</th><td><?php echo htmlspecialchars($specs['ram'] ?: 'Đang cập nhật'); ?></td></tr>
+                            <tr><th>Ổ cứng</th><td><?php echo htmlspecialchars($specs['storage'] ?: 'Đang cập nhật'); ?></td></tr>
+                            <tr><th>VGA</th><td><?php echo htmlspecialchars($specs['gpu'] ?: 'Đang cập nhật'); ?></td></tr>
+                            <tr><th>Màn hình</th><td><?php echo htmlspecialchars($specs['screen'] ?: 'Đang cập nhật'); ?></td></tr>
+                            <tr><th>OS</th><td><?php echo htmlspecialchars($specs['os'] ?: 'Đang cập nhật'); ?></td></tr>
+                            <tr><th>Trọng lượng</th><td><?php echo htmlspecialchars($specs['weight'] ?: 'Đang cập nhật'); ?></td></tr>
+                            <tr><th>Pin</th><td><?php echo htmlspecialchars($specs['battery'] ?: 'Đang cập nhật'); ?></td></tr>
+                        <?php else: ?>
+                            <tr><td colspan="2" class="text-center py-4">Chưa có thông số kỹ thuật.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function changeMainImage(src, thumb) {
+    document.getElementById('mainImage').src = src;
+    document.querySelectorAll('.thumb-img').forEach(img => img.classList.remove('active'));
+    thumb.classList.add('active');
+}
+</script>
 
     <script>
     function changeQty(delta) {
