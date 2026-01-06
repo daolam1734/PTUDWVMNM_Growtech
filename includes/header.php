@@ -1,6 +1,14 @@
 ﻿<?php
 if (session_status() == PHP_SESSION_NONE) session_start();
 require_once __DIR__ . "/../functions.php";
+
+// Fetch specific brands for menu
+$allowed_brands = ['Dell', 'Lenovo', 'Acer', 'HP', 'Asus', 'Apple'];
+$placeholders = implode(',', array_fill(0, count($allowed_brands), '?'));
+$stmt_menu_brands = $pdo->prepare("SELECT * FROM brands WHERE name IN ($placeholders) ORDER BY FIELD(name, $placeholders)");
+$stmt_execute_params = array_merge($allowed_brands, $allowed_brands);
+$stmt_menu_brands->execute($stmt_execute_params);
+$menu_brands = $stmt_menu_brands->fetchAll();
 ?>
 <!doctype html>
 <html lang="vi">
@@ -511,11 +519,23 @@ require_once __DIR__ . "/../functions.php";
                   <div class="row">
                     <div class="col-md-4">
                       <div class="megamenu-title">Thương hiệu</div>
-                      <a class="dropdown-item" href="/weblaptop/index.php?brand=Dell"><i class="bi bi-circle-fill"></i> Dell</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?brand=HP"><i class="bi bi-circle-fill"></i> HP</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?brand=Lenovo"><i class="bi bi-circle-fill"></i> Lenovo</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?brand=ASUS"><i class="bi bi-circle-fill"></i> ASUS</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?brand=Apple"><i class="bi bi-circle-fill"></i> MacBook</a>
+                      <div class="row g-2">
+                        <?php foreach ($menu_brands as $b): ?>
+                          <div class="col-6">
+                            <a class="dropdown-item p-2 d-flex align-items-center border rounded-3 mb-1" href="/weblaptop/search.php?brand=<?php echo urlencode($b['name']); ?>" style="background: #f8f9fa !important;">
+                              <?php if ($b['logo']): ?>
+                                <img src="<?php echo htmlspecialchars($b['logo']); ?>" alt="<?php echo htmlspecialchars($b['name']); ?>" style="width: 24px; height: 24px; object-fit: contain; margin-right: 8px;">
+                              <?php else: ?>
+                                <i class="bi bi-tag me-2" style="font-size: 14px; color: var(--tet-red);"></i>
+                              <?php endif; ?>
+                              <span class="small fw-bold"><?php echo htmlspecialchars($b['name']); ?></span>
+                            </a>
+                          </div>
+                        <?php endforeach; ?>
+                      </div>
+                      <?php if (empty($menu_brands)): ?>
+                        <a class="dropdown-item disabled" href="#">Chưa có thương hiệu</a>
+                      <?php endif; ?>
                     </div>
                     <div class="col-md-4">
                       <div class="megamenu-title">Nhu cầu sử dụng</div>
