@@ -54,14 +54,14 @@ if ($is_filtered) {
 ?>
 
 <style>
-    .product-grid-item { transition: transform 0.2s, box-shadow 0.2s; border: 1px solid transparent; background: #fff; height: 100%; display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; position: relative; }
-    .product-grid-item:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(211, 47, 47, 0.15); border-color: var(--tet-red, #d32f2f); }
-    .product-grid-img { aspect-ratio: 1/1; object-fit: cover; width: 100%; transition: transform 0.3s; }
-    .product-grid-item:hover .product-grid-img { transform: scale(1.05); }
-    .product-grid-info { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
-    .product-grid-name { font-size: 13px; line-height: 18px; height: 36px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: #333; margin-bottom: 10px; text-decoration: none; font-weight: 500; }
-    .product-grid-price { color: var(--tet-red, #d32f2f); font-size: 16px; font-weight: 700; }
-    .product-grid-sold { font-size: 11px; color: #757575; }
+    .product-grid-item { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #f0f0f0; background: #fff; height: 100%; display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; position: relative; }
+    .product-grid-item:hover { transform: translateY(-8px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); border-color: #d32f2f; }
+    .product-grid-img { aspect-ratio: 1/1; object-fit: contain; width: 100%; padding: 10px; background: #fff; transition: transform 0.5s; }
+    .product-grid-item:hover .product-grid-img { transform: scale(1.08); }
+    .product-grid-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; background: #fff; }
+    .product-grid-name { font-size: 14px; line-height: 1.4; height: 40px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: #2c3e50; margin-bottom: 8px; text-decoration: none; font-weight: 600; }
+    .product-grid-price { color: #d32f2f; font-size: 18px; font-weight: 800; }
+    .product-grid-sold { font-size: 12px; color: #adb5bd; }
     
     .product-badge {
         position: absolute;
@@ -216,14 +216,16 @@ if ($is_filtered) {
     }
     .flash-sale-item {
         background: #fff;
-        border-radius: 8px;
-        padding: 10px;
+        border-radius: 12px;
+        padding: 15px;
         color: #333;
         text-align: center;
-        transition: transform 0.2s;
+        transition: all 0.3s;
+        border: 1px solid #f0f0f0;
+        height: 100%;
     }
-    .flash-sale-item:hover { transform: scale(1.03); }
-    .flash-sale-price { color: var(--tet-red); font-weight: 700; font-size: 18px; }
+    .flash-sale-item:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,0.06); border-color: #d32f2f; }
+    .flash-sale-price { color: #d32f2f; font-weight: 800; font-size: 18px; }
     .flash-sale-old-price { text-decoration: line-through; color: #999; font-size: 13px; }
     .flash-sale-progress {
         height: 16px;

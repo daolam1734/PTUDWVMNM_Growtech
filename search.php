@@ -6,10 +6,14 @@ require_once __DIR__ . '/config/database.php';
 $q = isset($_GET['q']) ? trim($_GET['q']) : '';
 $category_slug = isset($_GET['category']) ? trim($_GET['category']) : '';
 $brand = isset($_GET['brand']) ? trim($_GET['brand']) : '';
-$price_min = isset($_GET['price_min']) ? (float)$_GET['price_min'] : 0;
-$price_max = isset($_GET['price_max']) ? (float)$_GET['price_max'] : 0;
+$price_range = isset($_GET['price']) ? trim($_GET['price']) : '';
+$cpu_filter = isset($_GET['cpu']) ? trim($_GET['cpu']) : '';
+$ram_filter = isset($_GET['ram']) ? trim($_GET['ram']) : '';
+$storage_filter = isset($_GET['storage']) ? trim($_GET['storage']) : '';
+$screen_filter = isset($_GET['screen']) ? trim($_GET['screen']) : '';
+
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = 20; // Shopee-style grid usually has more items
+$limit = 20;
 $offset = ($page - 1) * $limit;
 
 $products = [];
@@ -20,10 +24,7 @@ $params = [];
 
 if ($q !== '') {
     $where[] = "(p.name LIKE ? OR p.sku LIKE ? OR b.name LIKE ? OR p.description LIKE ?)";
-    $params[] = "%$q%";
-    $params[] = "%$q%";
-    $params[] = "%$q%";
-    $params[] = "%$q%";
+    $params[] = "%$q%"; $params[] = "%$q%"; $params[] = "%$q%"; $params[] = "%$q%";
 }
 
 if ($category_slug !== '') {
@@ -36,32 +37,58 @@ if ($brand !== '') {
     $params[] = $brand;
 }
 
-if ($price_min > 0) {
-    $where[] = "p.price >= ?";
-    $params[] = $price_min;
+// Price Range Handler
+if ($price_range !== '') {
+    if ($price_range === '50+') {
+        $where[] = "p.price >= 50000000";
+    } else {
+        $parts = explode('-', $price_range);
+        if (count($parts) === 2) {
+            $min = (float)$parts[0] * 1000000;
+            $max = (float)$parts[1] * 1000000;
+            $where[] = "p.price BETWEEN ? AND ?";
+            $params[] = $min;
+            $params[] = $max;
+        }
+    }
 }
 
-if ($price_max > 0) {
-    $where[] = "p.price <= ?";
-    $params[] = $price_max;
+// Spec Filters (using LIKE for flexibility)
+if ($cpu_filter !== '') {
+    $where[] = "ps.cpu LIKE ?";
+    $params[] = "%$cpu_filter%";
+}
+if ($ram_filter !== '') {
+    $where[] = "ps.ram LIKE ?";
+    $params[] = "%$ram_filter%";
+}
+if ($storage_filter !== '') {
+    $where[] = "ps.storage LIKE ?";
+    $params[] = "%$storage_filter%";
+}
+if ($screen_filter !== '') {
+    $where[] = "ps.screen LIKE ?";
+    $params[] = "%$screen_filter%";
 }
 
 $where_sql = implode(" AND ", $where);
 
-// Count total for pagination
+// Count total
 $stmt_count = $pdo->prepare("SELECT COUNT(DISTINCT p.id) 
     FROM products p 
     LEFT JOIN brands b ON b.id = p.brand_id
     LEFT JOIN categories c ON c.id = p.category_id
+    LEFT JOIN product_specifications ps ON ps.product_id = p.id
     WHERE $where_sql");
 $stmt_count->execute($params);
 $total_products = $stmt_count->fetchColumn();
 
 // Fetch products
-$sql = "SELECT p.*, b.name as brand_name, pi.url as image_url
+$sql = "SELECT p.*, b.name as brand_name, pi.url as image_url, ps.cpu, ps.ram, ps.storage, ps.screen
     FROM products p
     LEFT JOIN brands b ON b.id = p.brand_id
     LEFT JOIN categories c ON c.id = p.category_id
+    LEFT JOIN product_specifications ps ON ps.product_id = p.id
     LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.position = 0
     WHERE $where_sql
     GROUP BY p.id

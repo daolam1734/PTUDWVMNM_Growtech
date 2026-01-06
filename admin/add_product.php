@@ -20,7 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price = (float)$_POST['price'];
     $sale_price = $_POST['sale_price'] ? (float)$_POST['sale_price'] : null;
     $stock = (int)$_POST['stock'];
-    $image = $_POST['image'] ?? '';
     $is_active = isset($_POST['is_active']) ? 1 : 0;
     
     // Specs
@@ -34,15 +33,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $battery = $_POST['battery'] ?? '';
     $ports = $_POST['ports'] ?? '';
     
+    // Process uploaded images
+    $uploadedImages = [];
+    $uploadDir = __DIR__ . '/../uploads/products/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    if (!empty($_FILES['product_images']['name'][0])) {
+        $fileCount = count($_FILES['product_images']['name']);
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $maxSize = 5 * 1024 * 1024; // 5MB
+        
+        for ($i = 0; $i < $fileCount; $i++) {
+            if ($_FILES['product_images']['error'][$i] === UPLOAD_ERR_OK) {
+                $fileName = $_FILES['product_images']['name'][$i];
+                $fileTmp = $_FILES['product_images']['tmp_name'][$i];
+                $fileSize = $_FILES['product_images']['size'][$i];
+                $fileType = $_FILES['product_images']['type'][$i];
+                
+                // Validate file type
+                if (!in_array($fileType, $allowedTypes)) {
+                    $error = "File {$fileName} không phải định dạng ảnh hợp lệ (JPEG, PNG, GIF, WEBP).";
+                    continue;
+                }
+                
+                // Validate file size
+                if ($fileSize > $maxSize) {
+                    $error = "File {$fileName} vượt quá kích thước cho phép (5MB).";
+                    continue;
+                }
+                
+                // Generate unique filename
+                $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                $newFileName = uniqid() . '_' . time() . '.' . $fileExt;
+                $destination = $uploadDir . $newFileName;
+                
+                if (move_uploaded_file($fileTmp, $destination)) {
+                    $uploadedImages[] = '/uploads/products/' . $newFileName;
+                }
+            }
+        }
+    }
+    
     $pdo->beginTransaction();
     try {
         $stmt = $pdo->prepare("INSERT INTO products (sku, name, slug, brand_id, category_id, short_description, description, price, sale_price, stock, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$sku, $name, $slug, $brand_id, $category_id, $short_desc, $desc, $price, $sale_price, $stock, $is_active]);
         $product_id = $pdo->lastInsertId();
         
-        if ($image) {
-            $stmt_img = $pdo->prepare("INSERT INTO product_images (product_id, url, position) VALUES (?, ?, 0)");
-            $stmt_img->execute([$product_id, $image]);
+        // Insert uploaded images
+        if (!empty($uploadedImages)) {
+            $stmt_img = $pdo->prepare("INSERT INTO product_images (product_id, url, position) VALUES (?, ?, ?)");
+            foreach ($uploadedImages as $position => $imageUrl) {
+                $stmt_img->execute([$product_id, $imageUrl, $position]);
+            }
         }
 
         // Insert specs
@@ -50,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt_specs->execute([$product_id, $cpu, $ram, $storage, $gpu, $screen, $os, $weight, $battery, $ports]);
 
         $pdo->commit();
-        set_flash("success", "Thêm sản phẩm thành công.");
+        set_flash("success", "Thêm sản phẩm thành công với " . count($uploadedImages) . " ảnh.");
         header('Location: products.php'); exit;
     } catch (Exception $e) {
         $pdo->rollBack();
@@ -82,7 +127,7 @@ require_once __DIR__ . '/includes/header.php';
             </div>
         <?php endif; ?>
 
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             <div class="row g-4">
                 <div class="col-lg-8">
                     <!-- Basic Info -->
@@ -230,14 +275,17 @@ require_once __DIR__ . '/includes/header.php';
                     <!-- Media -->
                     <div class="card border-0 shadow-sm rounded-4 mb-4">
                         <div class="card-header bg-white py-3 border-bottom">
-                            <h6 class="mb-0 fw-bold"><i class="bi bi-image me-2 text-primary"></i>Hình ảnh</h6>
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-image me-2 text-primary"></i>Hình ảnh sản phẩm</h6>
                         </div>
                         <div class="card-body p-4">
-                            <div class="mb-0">
-                                <label class="form-label small fw-bold">URL ảnh chính</label>
-                                <input class="form-control" name="image" placeholder="https://...">
-                                <div class="form-text x-small mt-2">Sử dụng URL ảnh từ thư viện hoặc link ngoài.</div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Chọn ảnh sản phẩm (có thể chọn nhiều)</label>
+                                <input type="file" class="form-control" name="product_images[]" id="product_images" multiple accept="image/*">
+                                <div class="form-text x-small mt-2">
+                                    <i class="bi bi-info-circle"></i> Định dạng: JPG, PNG, GIF, WEBP. Tối đa: 5MB/ảnh.
+                                </div>
                             </div>
+                            <div id="image_preview" class="row g-2"></div>
                         </div>
                     </div>
 
@@ -255,5 +303,53 @@ require_once __DIR__ . '/includes/header.php';
         </form>
     </div>
 </div>
+
+<script>
+let selectedFiles = [];
+
+document.getElementById('product_images').addEventListener('change', function(e) {
+    const newFiles = Array.from(e.target.files);
+    selectedFiles = selectedFiles.concat(newFiles);
+    updatePreviewAndInput();
+});
+
+function updatePreviewAndInput() {
+    const preview = document.getElementById('image_preview');
+    const input = document.getElementById('product_images');
+    preview.innerHTML = '';
+    
+    const dt = new DataTransfer();
+    
+    selectedFiles.forEach((file, index) => {
+        if (!file.type.startsWith('image/')) return;
+        
+        dt.items.add(file);
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const col = document.createElement('div');
+            col.className = 'col-6 col-md-4 mb-2';
+            col.innerHTML = `
+                <div class="position-relative">
+                    <img src="${e.target.result}" class="img-fluid rounded border shadow-sm" style="height: 100px; width: 100%; object-fit: cover;">
+                    <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle" onclick="removeImage(${index})" style="width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; border: 2px solid white;">
+                        <i class="bi bi-x"></i>
+                    </button>
+                    <div class="badge bg-dark bg-opacity-50 position-absolute bottom-0 start-0 m-1 small">Ảnh ${index + 1}</div>
+                </div>
+            `;
+            preview.appendChild(col);
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    input.files = dt.files;
+}
+
+function removeImage(index) {
+    selectedFiles.splice(index, 1);
+    updatePreviewAndInput();
+}
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

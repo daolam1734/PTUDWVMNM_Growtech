@@ -36,20 +36,20 @@
         color: #adb5bd;
     }
     .sidebar-item:hover {
-        color: var(--shopee-orange);
-        background: #fff5f2;
+        color: var(--accent-color);
+        background: #f8f9fa;
     }
     .sidebar-item:hover i {
-        color: var(--shopee-orange);
+        color: var(--accent-color);
     }
     .sidebar-item.active {
-        color: var(--shopee-orange);
-        background: #fff5f2;
+        color: var(--accent-color);
+        background: #f8f9fa;
         font-weight: 600;
-        border-left-color: var(--shopee-orange);
+        border-left-color: var(--accent-color);
     }
     .sidebar-item.active i {
-        color: var(--shopee-orange);
+        color: var(--accent-color);
     }
     .sidebar-badge {
         margin-left: auto;
@@ -60,62 +60,65 @@
 </style>
 
 <div class="admin-sidebar">
+    <div class="px-3 mb-3">
+        <a href="../index.php" target="_blank" class="btn btn-light w-100 rounded-pill border shadow-sm py-2 small fw-bold">
+            <i class="bi bi-box-arrow-up-right me-2"></i> Xem Website
+        </a>
+    </div>
+
     <a href="dashboard.php" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : ''; ?>">
         <i class="bi bi-speedometer2"></i> Tổng quan
     </a>
 
-    <div class="sidebar-group-title">Quản Lý Đơn Hàng</div>
+    <div class="sidebar-group-title">Kinh Doanh & Báo Cáo</div>
     <a href="orders.php" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) == 'orders.php' ? 'active' : ''; ?>">
-        <i class="bi bi-cart-check"></i> Tất Cả Đơn Hàng
+        <i class="bi bi-cart-check"></i> Quản Lý Đơn Hàng
         <?php
         $pending_count = $pdo->query("SELECT COUNT(*) FROM orders WHERE order_status = 'dang_cho'")->fetchColumn();
         if ($pending_count > 0) echo "<span class='sidebar-badge bg-danger text-white'>$pending_count</span>";
         ?>
     </a>
-
-    <div class="sidebar-group-title">Quản Lý Sản Phẩm</div>
-    <a href="products.php" class="sidebar-item <?php echo in_array(basename($_SERVER['PHP_SELF']), ['products.php', 'edit_product.php']) ? 'active' : ''; ?>">
-        <i class="bi bi-box-seam"></i> Tất Cả Sản Phẩm
+    <a href="analytics.php" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) == 'analytics.php' ? 'active' : ''; ?>">
+        <i class="bi bi-graph-up-arrow"></i> Phân Tích Doanh Thu
     </a>
-    <a href="add_product.php" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) == 'add_product.php' ? 'active' : ''; ?>">
-        <i class="bi bi-plus-circle"></i> Thêm Sản Phẩm
+
+    <div class="sidebar-group-title">Sản Phẩm & Kho</div>
+    <a href="products.php" class="sidebar-item <?php echo in_array(basename($_SERVER['PHP_SELF']), ['products.php', 'edit_product.php', 'add_product.php']) ? 'active' : ''; ?>">
+        <i class="bi bi-box-seam"></i> Danh Sách Sản Phẩm
     </a>
     <a href="categories.php" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) == 'categories.php' ? 'active' : ''; ?>">
-        <i class="bi bi-tags"></i> Danh Mục
+        <i class="bi bi-tags"></i> Danh Mục Ngành Hàng
     </a>
     <a href="brands.php" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) == 'brands.php' ? 'active' : ''; ?>">
-        <i class="bi bi-building"></i> Thương Hiệu
+        <i class="bi bi-building"></i> Thương Hiệu Đối Tác
     </a>
 
     <div class="sidebar-group-title">Marketing & Khuyến Mãi</div>
     <a href="flash_sales.php" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) == 'flash_sales.php' ? 'active' : ''; ?>">
-        <i class="bi bi-lightning-charge"></i> Flash Sale
+        <i class="bi bi-lightning-charge"></i> Chương Trình Flash Sale
     </a>
     <a href="vouchers.php" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) == 'vouchers.php' ? 'active' : ''; ?>">
-        <i class="bi bi-ticket-perforated"></i> Mã Giảm Giá
+        <i class="bi bi-ticket-perforated"></i> Mã Giảm Giá (Voucher)
     </a>
     <a href="banners.php" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) == 'banners.php' ? 'active' : ''; ?>">
-        <i class="bi bi-image"></i> Quản Lý Banner
+        <i class="bi bi-image"></i> Banner Quảng Cáo
     </a>
 
     <div class="sidebar-group-title">Khách Hàng & Phản Hồi</div>
     <a href="customers.php" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) == 'customers.php' ? 'active' : ''; ?>">
-        <i class="bi bi-people"></i> Khách Hàng
+        <i class="bi bi-people"></i> Danh Sách Khách Hàng
     </a>
     <a href="reviews.php" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) == 'reviews.php' ? 'active' : ''; ?>">
-        <i class="bi bi-chat-left-text"></i> Đánh Giá
+        <i class="bi bi-chat-left-text"></i> Đánh Giá Từ Khách
         <?php
         $pending_reviews = $pdo->query("SELECT COUNT(*) FROM reviews WHERE status = 'dang_cho'")->fetchColumn();
         if ($pending_reviews > 0) echo "<span class='sidebar-badge bg-warning text-dark'>$pending_reviews</span>";
         ?>
     </a>
     
-    <div class="sidebar-group-title">Báo Cáo & Hệ Thống</div>
-    <a href="analytics.php" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) == 'analytics.php' ? 'active' : ''; ?>">
-        <i class="bi bi-graph-up-arrow"></i> Phân Tích Bán Hàng
-    </a>
+    <div class="sidebar-group-title">Hệ Thống & Cấu Hình</div>
     <a href="settings.php" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'active' : ''; ?>">
-        <i class="bi bi-gear"></i> Cài Đặt Shop
+        <i class="bi bi-gear"></i> Cài Đặt Website
     </a>
     <div class="mt-4 px-4 mb-4">
         <a href="logout.php" class="btn btn-outline-danger btn-sm w-100 rounded-pill">

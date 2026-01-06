@@ -78,6 +78,14 @@ function getProductImage($product_id) {
     $img_cache[$product_id] = $img ?: 'https://placehold.co/600x400?text=No+Image';
     return $img_cache[$product_id];
 }
+
+function getProductImages($product_id) {
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT * FROM product_images WHERE product_id = ? ORDER BY position ASC");
+    $stmt->execute([$product_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 function getProductSpecs($product_id) {
     global $pdo;
     $stmt = $pdo->prepare("SELECT * FROM product_specifications WHERE product_id = ?");
