@@ -16,27 +16,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $order_id = (int)($_POST['order_id'] ?? 0);
 
-    if ($action === 'cancel' && $order_id > 0) {
+    // Fetch order first to get order_no for feedback
+    $stmt_check = $pdo->prepare("SELECT order_no, order_status FROM orders WHERE id = ? AND user_id = ?");
+    $stmt_check->execute([$order_id, $user_id]);
+    $order_info = $stmt_check->fetch();
+    $order_no = $order_info ? $order_info['order_no'] : '';
+
+    if ($action === 'cancel' && $order_id > 0 && $order_no) {
         if (cancelOrder($order_id, $user_id)) {
             // Send notification
             createNotification(
                 $user_id, 
-                "Đơn hàng #$order_id đã hủy", 
-                "Bạn vừa hủy đơn hàng #$order_id thành công. Tiền (nếu đã thanh toán) sẽ được xử lý hoàn lại theo chính sách.", 
+                "Đơn hàng $order_no đã hủy", 
+                "Bạn vừa hủy đơn hàng $order_no thành công. Tiền (nếu đã thanh toán) sẽ được xử lý hoàn lại theo chính sách.", 
                 'order',
                 "/weblaptop/orders.php"
             );
-            set_flash('success', 'Đã hủy đơn hàng #' . $order_id . ' thành công.');
+            set_flash('success', 'Đã hủy đơn hàng ' . $order_no . ' thành công.');
         } else {
             set_flash('danger', 'Không thể hủy đơn hàng này.');
         }
-    } elseif ($action === 'edit' && $order_id > 0) {
-        // Fetch items and voucher before cancelling
-        $stmt_order = $pdo->prepare("SELECT * FROM orders WHERE id = ? AND user_id = ?");
-        $stmt_order->execute([$order_id, $user_id]);
-        $order_data = $stmt_order->fetch();
-
-        if (!$order_data || $order_data['order_status'] !== 'PENDING') {
+    } elseif ($action === 'edit' && $order_id > 0 && $order_no) {
+        if (!$order_info || $order_info['order_status'] !== 'PENDING') {
             set_flash('danger', 'Không thể chỉnh sửa đơn hàng này.');
             header('Location: orders.php');
             exit;
@@ -46,10 +47,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt_items->execute([$order_id]);
         $items = $stmt_items->fetchAll();
 
+        // Check if there's a voucher
+        $stmt_order_full = $pdo->prepare("SELECT voucher_id FROM orders WHERE id = ?");
+        $stmt_order_full->execute([$order_id]);
+        $full_order = $stmt_order_full->fetch();
+        
         $voucher_data = null;
-        if (!empty($order_data['voucher_id'])) {
+        if (!empty($full_order['voucher_id'])) {
             $stmt_v = $pdo->prepare("SELECT * FROM vouchers WHERE id = ?");
-            $stmt_v->execute([$order_data['voucher_id']]);
+            $stmt_v->execute([$full_order['voucher_id']]);
             $voucher_data = $stmt_v->fetch();
         }
 
@@ -66,12 +72,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            // Restore voucher to session if it existed
+            // Restore voucher if it was a single voucher (legacy support)
             if ($voucher_data) {
-                $_SESSION['voucher'] = $voucher_data;
+                $_SESSION['vouchers']['product'] = [
+                    'code' => $voucher_data['code'],
+                    'value' => $voucher_data['discount_value'],
+                    'type' => $voucher_data['discount_type']
+                ];
             }
 
-            set_flash('success', 'Đơn hàng đã được hủy và các sản phẩm đã được đưa lại vào giỏ hàng để bạn chỉnh sửa.');
+            set_flash('success', 'Đơn hàng ' . $order_no . ' đã được hủy và các sản phẩm đã được đưa lại vào giỏ hàng để bạn chỉnh sửa.');
             header('Location: cart.php');
             exit;
         } else {
@@ -82,9 +92,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// Fetch user orders
-$stmt = $pdo->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC");
-$stmt->execute([$user_id]);
+// Fetch user orders with filtering
+$status_filter = $_GET['status'] ?? 'all';
+$query = "SELECT * FROM orders WHERE user_id = ?";
+$params = [$user_id];
+
+if ($status_filter !== 'all') {
+    if ($status_filter === 'PROCESSING_GROUP') {
+        $query .= " AND order_status IN ('CONFIRMED', 'PROCESSING')";
+    } else {
+        $query .= " AND order_status = ?";
+        $params[] = $status_filter;
+    }
+}
+$query .= " ORDER BY created_at DESC";
+
+$stmt = $pdo->prepare($query);
+$stmt->execute($params);
 $orders = $stmt->fetchAll();
 
 require_once __DIR__ . '/includes/header.php';
@@ -202,6 +226,43 @@ require_once __DIR__ . '/includes/header.php';
         text-transform: uppercase;
         font-weight: 700;
     }
+
+    /* Order Status Tabs */
+    .order-status-tabs {
+        display: flex;
+        background: #fff;
+        border-radius: 16px;
+        padding: 8px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        overflow-x: auto;
+        gap: 5px;
+        scrollbar-width: none; /* Firefox */
+    }
+    .order-status-tabs::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
+    .status-tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px 15px;
+        border-radius: 12px;
+        color: #64748b;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+        white-space: nowrap;
+        border: 2px solid transparent;
+    }
+    .status-tab:hover {
+        background: #f8fafc;
+        color: var(--tet-red);
+    }
+    .status-tab.active {
+        background: #fff1f2;
+        color: var(--tet-red);
+        border-color: #fee2e2;
+    }
 </style>
 
 <div class="container py-5">
@@ -251,6 +312,16 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
             </div>
 
+            <!-- Status Tabs Navigation -->
+            <div class="order-status-tabs">
+                <a href="?status=all" class="status-tab <?php echo $status_filter === 'all' ? 'active' : ''; ?>">Tất cả</a>
+                <a href="?status=PENDING" class="status-tab <?php echo $status_filter === 'PENDING' ? 'active' : ''; ?>">Chờ xác nhận</a>
+                <a href="?status=PROCESSING_GROUP" class="status-tab <?php echo $status_filter === 'PROCESSING_GROUP' ? 'active' : ''; ?>">Đang xử lý</a>
+                <a href="?status=SHIPPING" class="status-tab <?php echo $status_filter === 'SHIPPING' ? 'active' : ''; ?>">Đang giao</a>
+                <a href="?status=COMPLETED" class="status-tab <?php echo $status_filter === 'COMPLETED' ? 'active' : ''; ?>">Hoàn thành</a>
+                <a href="?status=CANCELLED" class="status-tab <?php echo $status_filter === 'CANCELLED' ? 'active' : ''; ?>">Đã hủy</a>
+            </div>
+
             <?php if (empty($orders)): ?>
                 <div class="card border-0 shadow-sm rounded-5 py-5 text-center bg-white">
                     <div class="py-5">
@@ -268,8 +339,8 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="order-header">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="bg-light rounded-3 p-2 text-center" style="min-width: 60px;">
-                                    <div class="text-muted x-small fw-bold">ID</div>
-                                    <div class="text-dark fw-bold small">#<?php echo $o['id']; ?></div>
+                                    <div class="text-muted x-small fw-bold">MÃ ĐƠN</div>
+                                    <div class="text-dark fw-bold small">#<?php echo htmlspecialchars($o['order_no']); ?></div>
                                 </div>
                                 <div>
                                     <div class="text-muted x-small fw-bold text-uppercase">Ngày đặt</div>
