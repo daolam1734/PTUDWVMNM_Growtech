@@ -315,6 +315,19 @@ $menu_categories = $stmt_menu_cats->fetchAll();
       align-items: center;
       justify-content: center;
       border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .megamenu-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #999;
+      text-transform: uppercase;
+      margin: 15px 0 10px 5px;
+      display: block;
+      letter-spacing: 1px;
+    }
+    .megamenu-group-title:first-child {
+      margin-top: 0;
     }
     .megamenu-brand-item {
       text-align: center;
@@ -677,33 +690,73 @@ $menu_categories = $stmt_menu_cats->fetchAll();
                       <div class="megamenu-title">Theo nhu cầu</div>
                       <div class="row">
                         <?php 
-                        $chunks = array_chunk($menu_categories, ceil(count($menu_categories) / 2));
-                        foreach ($chunks as $chunk):
+                        $ui_groups = [
+                          'Học tập – Văn phòng' => ['hoc-tap', 'van-phong'],
+                          'Làm việc chuyên nghiệp' => ['doanh-nhan', 'lap-trinh'],
+                          'Thiết kế – Sáng tạo' => ['thiet-ke-do-hoa', 'sang-tao-noi-dung'],
+                          'Kỹ thuật – Dữ liệu' => ['ky-thuat', 'phan-tich-du-lieu', 'choi-game'], // Added gaming here for balance or keep separate
+                          'Cơ bản' => ['nhu-cau-co-ban']
+                        ];
+                        // Re-org gaming to its own or appropriate group based on user request II
+                        $ui_groups = [
+                          'Học tập – Văn phòng' => ['hoc-tap', 'van-phong'],
+                          'Làm việc chuyên nghiệp' => ['doanh-nhan', 'lap-trinh'],
+                          'Thiết kế – Sáng tạo' => ['thiet-ke-do-hoa', 'sang-tao-noi-dung'],
+                          'Kỹ thuật – Dữ liệu' => ['ky-thuat', 'phan-tich-du-lieu']
+                        ];
+                        $side_groups = [
+                          'Giải trí – Game' => ['choi-game'],
+                          'Cơ bản' => ['nhu-cau-co-ban']
+                        ];
+
+                        $icon_map = [
+                          'hoc-tap' => 'bi-mortarboard',
+                          'van-phong' => 'bi-building',
+                          'doanh-nhan' => 'bi-briefcase',
+                          'thiet-ke-do-hoa' => 'bi-palette',
+                          'lap-trinh' => 'bi-code-slash',
+                          'choi-game' => 'bi-controller',
+                          'ky-thuat' => 'bi-gear',
+                          'phan-tich-du-lieu' => 'bi-graph-up',
+                          'sang-tao-noi-dung' => 'bi-camera-reels',
+                          'nhu-cau-co-ban' => 'bi-house-heart'
+                        ];
+
+                        echo '<div class="col-6">';
+                        foreach ($ui_groups as $group_name => $slugs) {
+                          echo '<span class="megamenu-group-title">' . $group_name . '</span>';
+                          foreach ($slugs as $slug) {
+                            foreach ($menu_categories as $cat) {
+                              if ($cat['slug'] === $slug) {
+                                $icon = $icon_map[$slug] ?? 'bi-tag';
+                                echo '<a href="/weblaptop/search.php?category='.$slug.'" class="megamenu-link">
+                                        <i class="bi '.$icon.'"></i> '.htmlspecialchars($cat['name']).'
+                                      </a>';
+                              }
+                            }
+                          }
+                        }
+                        echo '</div><div class="col-6">';
+                        foreach ($side_groups as $group_name => $slugs) {
+                          echo '<span class="megamenu-group-title">' . $group_name . '</span>';
+                          foreach ($slugs as $slug) {
+                            foreach ($menu_categories as $cat) {
+                              if ($cat['slug'] === $slug) {
+                                $icon = $icon_map[$slug] ?? 'bi-tag';
+                                $badge = ($slug === 'choi-game') ? ' <span class="tet-badge">Hot</span>' : '';
+                                echo '<a href="/weblaptop/search.php?category='.$slug.'" class="megamenu-link">
+                                        <i class="bi '.$icon.'"></i> '.htmlspecialchars($cat['name']).$badge.'
+                                      </a>';
+                              }
+                            }
+                          }
+                        }
                         ?>
-                          <div class="col-6">
-                            <?php foreach ($chunk as $cat): 
-                              $icon = "bi-tag";
-                              if (strpos($cat['slug'], 'van-phong') !== false) $icon = "bi-laptop";
-                              elseif (strpos($cat['slug'], 'gaming') !== false) $icon = "bi-controller";
-                              elseif (strpos($cat['slug'], 'doanh-nhan') !== false) $icon = "bi-briefcase";
-                              elseif (strpos($cat['slug'], 'hoc-tap') !== false || strpos($cat['slug'], 'sinh-vien') !== false) $icon = "bi-mortarboard";
-                              elseif (strpos($cat['slug'], 'cao-cap') !== false) $icon = "bi-gem";
-                              elseif (strpos($cat['slug'], '2-trong-1') !== false) $icon = "bi-unfold-vertical";
-                            ?>
-                              <a href="/weblaptop/search.php?category=<?php echo $cat['slug']; ?>" class="megamenu-link">
-                                <i class="bi <?php echo $icon; ?>"></i> <?php echo htmlspecialchars($cat['name']); ?>
-                                <?php if (strpos($cat['slug'], 'gaming') !== false): ?>
-                                  <span class="tet-badge">Hot</span>
-                                <?php endif; ?>
-                              </a>
-                            <?php endforeach; ?>
-                          </div>
-                        <?php endforeach; ?>
-                      </div>
-                      
-                      <div class="mt-4 p-3 rounded-4 text-center border" style="background: var(--tet-soft-bg); border-color: var(--tet-light-gold) !important;">
-                        <p class="small mb-2 fw-bold" style="color: var(--tet-dark-red);">Hỗ trợ chọn mua Laptop Tết?</p>
-                        <a href="/weblaptop/contact.php" class="btn btn-sm btn-danger rounded-pill px-3" style="background: var(--tet-red); border: none;">Liên hệ ngay</a>
+                        
+                        <div class="mt-auto p-3 rounded-4 text-center border mt-4" style="background: var(--tet-soft-bg); border-color: var(--tet-light-gold) !important;">
+                          <p class="small mb-2 fw-bold" style="color: var(--tet-dark-red);">Hỗ trợ chọn mua Laptop Tết?</p>
+                          <a href="/weblaptop/contact.php" class="btn btn-sm btn-danger rounded-pill px-3" style="background: var(--tet-red); border: none;">Liên hệ ngay</a>
+                        </div>
                       </div>
                     </div>
 
