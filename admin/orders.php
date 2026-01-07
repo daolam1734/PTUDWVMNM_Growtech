@@ -11,13 +11,79 @@ if (empty($_SESSION['admin_logged_in'])) {
 // Handle status update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['status'])) {
     $order_id = (int)$_POST['order_id'];
-    $status = $_POST['status'];
+    $new_status = $_POST['status'];
     
-    $stmt = $pdo->prepare("UPDATE orders SET order_status = ? WHERE id = ?");
-    if ($stmt->execute([$status, $order_id])) {
-        set_flash("success", "Cập nhật trạng thái đơn hàng #$order_id thành công.");
+    // Fetch current order info
+    $stmt_info = $pdo->prepare("SELECT order_no, order_status, user_id FROM orders WHERE id = ?");
+    $stmt_info->execute([$order_id]);
+    $order = $stmt_info->fetch();
+
+    if ($order) {
+        $old_status = $order['order_status'];
+        $order_no = $order['order_no'];
+        $user_id = $order['user_id'];
+
+        // Logic check: Avoid redundant updates
+        if ($old_status === $new_status) {
+            header("Location: orders.php");
+            exit;
+        }
+
+        try {
+            $pdo->beginTransaction();
+
+            // 1. Update status
+            $stmt = $pdo->prepare("UPDATE orders SET order_status = ? WHERE id = ?");
+            $stmt->execute([$new_status, $order_id]);
+
+            // 2. Logic for Stock Restoration if CANCELLED
+            if ($new_status === 'CANCELLED' && $old_status !== 'CANCELLED') {
+                $stmtItems = $pdo->prepare("SELECT * FROM order_items WHERE order_id = ?");
+                $stmtItems->execute([$order_id]);
+                $items = $stmtItems->fetchAll();
+
+                $stmtStock = $pdo->prepare("UPDATE products SET stock = stock + ? WHERE id = ?");
+                $stmtMovement = $pdo->prepare("INSERT INTO stock_movements (product_id, change_qty, type, reference, note) VALUES (?, ?, 'restock', ?, 'Admin hủy đơn hàng')");
+                
+                foreach ($items as $it) {
+                    $stmtStock->execute([$it['quantity'], $it['product_id']]);
+                    $stmtMovement->execute([$it['product_id'], $it['quantity'], $order_no]);
+                }
+
+                createNotification($user_id, "Đơn hàng $order_no đã bị hủy", "Admin đã hủy đơn hàng $order_no của bạn. Vui lòng liên hệ CSKH nếu có thắc mắc.", "order", "/weblaptop/orders.php");
+            }
+
+            // 3. Update payment status if COMPLETED
+            if ($new_status === 'COMPLETED') {
+                $pdo->prepare("UPDATE orders SET payment_status = 'PAID' WHERE id = ?")->execute([$order_id]);
+                createNotification($user_id, "Đơn hàng $order_no hoàn tất", "Cảm ơn bạn đã tin dùng sản phẩm của GrowTech. Đơn hàng đã được giao thành công.", "order", "/weblaptop/orders.php");
+            }
+
+            // 4. Notification for shipping
+            if ($new_status === 'SHIPPING') {
+                createNotification($user_id, "Đơn hàng $order_no đang giao", "Đơn hàng của bạn đã được giao cho đơn vị vận chuyển.", "order", "/weblaptop/orders.php");
+            }
+
+            $pdo->commit();
+
+            $status_labels = [
+                'PENDING' => 'Chờ xác nhận',
+                'CONFIRMED' => 'Đã xác nhận',
+                'PROCESSING' => 'Đang xử lý',
+                'SHIPPING' => 'Đang giao',
+                'DELIVERED' => 'Đã giao',
+                'COMPLETED' => 'Hoàn tất',
+                'CANCELLED' => 'Đã hủy'
+            ];
+            $readable_status = $status_labels[$new_status] ?? $new_status;
+
+            set_flash("success", "Cập nhật trạng thái đơn hàng $order_no sang <b>$readable_status</b> thành công.");
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            set_flash("error", "Lỗi log: " . $e->getMessage());
+        }
     } else {
-        set_flash("error", "Lỗi khi cập nhật trạng thái.");
+        set_flash("error", "Không tìm thấy đơn hàng.");
     }
     header("Location: orders.php");
     exit;
@@ -252,7 +318,7 @@ require_once __DIR__ . '/includes/header.php';
                         <?php endif; ?>
                         <?php foreach ($orders as $o): ?>
                         <tr>
-                            <td class="ps-4 fw-bold text-dark">#<?php echo $o['id']; ?></td>
+                            <td class="ps-4 fw-bold text-dark"><?php echo htmlspecialchars($o['order_no']); ?></td>
                             <td>
                                 <div class="d-flex align-items-center">
                                     <div class="customer-avatar"><?php echo strtoupper(substr($o['customer_name'] ?: 'K', 0, 1)); ?></div>
@@ -299,29 +365,46 @@ require_once __DIR__ . '/includes/header.php';
                                     <div class="dropdown">
                                         <button class="btn-action dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
                                         <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2">
-                                            <li class="dropdown-header small text-muted text-uppercase fw-bold pb-2 pt-1">Cập nhật nhanh</li>
+                                            <li class="dropdown-header small text-muted text-uppercase fw-bold pb-2 pt-1">Hành động</li>
+                                            <li><a class="dropdown-item rounded-3 small py-2" href="order_detail.php?id=<?php echo $o['id']; ?>"><i class="bi bi-eye me-2"></i>Xem chi tiết</a></li>
+                                            
                                             <?php
-                                            $possible_statuses = [
-                                                'PENDING' => 'Chờ xác nhận',
-                                                'CONFIRMED' => 'Đã xác nhận',
-                                                'PROCESSING' => 'Đang xử lý',
-                                                'SHIPPING' => 'Đang giao',
-                                                'DELIVERED' => 'Đã giao',
-                                                'COMPLETED' => 'Hoàn tất',
-                                                'CANCELLED' => 'Hủy đơn hàng'
-                                            ];
-                                            foreach ($possible_statuses as $val => $label): if ($val == $o['order_status']) continue;
+                                            $current = $o['order_status'];
+                                            $next_options = [];
+                                            
+                                            switch($current) {
+                                                case 'PENDING':
+                                                    $next_options = ['CONFIRMED' => 'Xác nhận đơn', 'CANCELLED' => 'Hủy đơn'];
+                                                    break;
+                                                case 'CONFIRMED':
+                                                    $next_options = ['PROCESSING' => 'Đóng gói/Xử lý', 'CANCELLED' => 'Hủy đơn'];
+                                                    break;
+                                                case 'PROCESSING':
+                                                    $next_options = ['SHIPPING' => 'Giao đơn vị vận chuyển', 'CANCELLED' => 'Hủy đơn'];
+                                                    break;
+                                                case 'SHIPPING':
+                                                    $next_options = ['DELIVERED' => 'Đã giao hàng', 'CANCELLED' => 'Hủy đơn'];
+                                                    break;
+                                                case 'DELIVERED':
+                                                    $next_options = ['COMPLETED' => 'Hoàn tất đơn'];
+                                                    break;
+                                            }
+
+                                            if (!empty($next_options)):
+                                                echo '<div class="dropdown-divider"></div>';
+                                                echo '<li class="dropdown-header x-small text-muted text-uppercase fw-bold pb-1 pt-1">Chuyển trạng thái</li>';
+                                                foreach ($next_options as $val => $label):
                                             ?>
                                             <li>
-                                                <form method="POST">
+                                                <form method="POST" onsubmit="return confirm('Bạn chắc chắn muốn chuyển sang trạng thái <?php echo $label; ?>?')">
                                                     <input type="hidden" name="order_id" value="<?php echo $o['id']; ?>">
                                                     <input type="hidden" name="status" value="<?php echo $val; ?>">
-                                                    <button type="submit" class="dropdown-item rounded-3 small py-2 <?php echo $val === 'CANCELLED' ? 'text-danger' : ''; ?>">
-                                                        <i class="bi bi-circle-fill me-2" style="font-size: 6px; vertical-align: middle;"></i> <?php echo $label; ?>
+                                                    <button type="submit" class="dropdown-item rounded-3 small py-2 <?php echo $val === 'CANCELLED' ? 'text-danger' : 'text-primary'; ?>">
+                                                        <i class="bi bi-arrow-right-short me-1"></i> <?php echo $label; ?>
                                                     </button>
                                                 </form>
                                             </li>
-                                            <?php endforeach; ?>
+                                            <?php endforeach; endif; ?>
                                         </ul>
                                     </div>
                                 </div>

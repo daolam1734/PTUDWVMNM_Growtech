@@ -10,6 +10,46 @@ if (empty($_SESSION['admin_logged_in'])) {
 
 $order_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
+// Handle status update (Sync logic with orders.php)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
+    $new_status = $_POST['status'];
+    
+    // Fetch current order data again to be safe
+    $stmt_check = $pdo->prepare("SELECT order_no, order_status, user_id FROM orders WHERE id = ?");
+    $stmt_check->execute([$order_id]);
+    $current_order = $stmt_check->fetch();
+
+    if ($current_order && $current_order['order_status'] !== $new_status) {
+        try {
+            $pdo->beginTransaction();
+            $pdo->prepare("UPDATE orders SET order_status = ? WHERE id = ?")->execute([$new_status, $order_id]);
+
+            if ($new_status === 'CANCELLED') {
+                // Restore stock logic (simplified here, but important)
+                $stmt_it = $pdo->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ?");
+                $stmt_it->execute([$order_id]);
+                $items_to_restore = $stmt_it->fetchAll();
+                foreach ($items_to_restore as $it) {
+                    $pdo->prepare("UPDATE products SET stock = stock + ? WHERE id = ?")->execute([$it['quantity'], $it['product_id']]);
+                }
+                createNotification($current_order['user_id'], "Đơn hàng ".$current_order['order_no']." đã bị hủy", "Admin đã cập nhật trạng thái đơn hàng của bạn.", "order", "/weblaptop/orders.php");
+            }
+
+            if ($new_status === 'COMPLETED') {
+                $pdo->prepare("UPDATE orders SET payment_status = 'PAID' WHERE id = ?")->execute([$order_id]);
+            }
+
+            $pdo->commit();
+            set_flash("success", "Cập nhật trạng thái thành công.");
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            set_flash("error", "Lỗi: " . $e->getMessage());
+        }
+    }
+    header("Location: order_detail.php?id=$order_id");
+    exit;
+}
+
 // Fetch order info
 $stmt = $pdo->prepare("
     SELECT o.*, u.full_name as customer_name, u.email as customer_email,
@@ -107,12 +147,12 @@ require_once __DIR__ . '/includes/header.php';
                 <ol class="breadcrumb mb-2">
                     <li class="breadcrumb-item"><a href="dashboard.php" class="text-decoration-none text-muted">Dashboard</a></li>
                     <li class="breadcrumb-item"><a href="orders.php" class="text-decoration-none text-muted">Đơn hàng</a></li>
-                    <li class="breadcrumb-item active text-dark fw-bold">#<?php echo $order['id']; ?></li>
+                    <li class="breadcrumb-item active text-dark fw-bold"><?php echo htmlspecialchars($order['order_no']); ?></li>
                 </ol>
             </nav>
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h4 class="fw-bold mb-1 text-dark">Chi Tiết Đơn Hàng #<?php echo $order['id']; ?></h4>
+                    <h4 class="fw-bold mb-1 text-dark">Chi Tiết Đơn Hàng <?php echo htmlspecialchars($order['order_no']); ?></h4>
                     <span class="status-badge status-<?php echo $order['order_status']; ?>">
                         <?php 
                         $status_map = [
@@ -129,14 +169,50 @@ require_once __DIR__ . '/includes/header.php';
                     </span>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-white border border-secondary border-opacity-10 shadow-sm btn-sm px-4 rounded-pill fw-bold">
+                    <?php
+                    $current = $order['order_status'];
+                    $next = null;
+                    $next_label = '';
+                    $btn_class = 'btn-primary';
+                    $icon = 'bi-check-circle';
+
+                    switch($current) {
+                        case 'PENDING':
+                            $next = 'CONFIRMED'; $next_label = 'Xác nhận đơn'; break;
+                        case 'CONFIRMED':
+                            $next = 'PROCESSING'; $next_label = 'Bắt đầu đóng gói'; $icon = 'bi-box-seam'; break;
+                        case 'PROCESSING':
+                            $next = 'SHIPPING'; $next_label = 'Giao vận chuyển'; $icon = 'bi-truck'; break;
+                        case 'SHIPPING':
+                            $next = 'DELIVERED'; $next_label = 'Xác nhận đã giao'; $icon = 'bi-house-check'; break;
+                        case 'DELIVERED':
+                            $next = 'COMPLETED'; $next_label = 'Hoàn tất đơn'; $icon = 'bi-patch-check'; $btn_class = 'btn-success'; break;
+                    }
+
+                    if ($next):
+                    ?>
+                    <form method="POST" class="d-inline">
+                        <input type="hidden" name="action" value="update_status">
+                        <input type="hidden" name="status" value="<?php echo $next; ?>">
+                        <button type="submit" class="btn <?php echo $btn_class; ?> shadow-sm btn-sm px-4 rounded-pill fw-bold">
+                            <i class="bi <?php echo $icon; ?> me-2"></i> <?php echo $next_label; ?>
+                        </button>
+                    </form>
+                    <?php endif; ?>
+
+                    <?php if (!in_array($current, ['COMPLETED', 'CANCELLED', 'DELIVERED'])): ?>
+                    <form method="POST" class="d-inline" onsubmit="return confirm('Hủy đơn hàng này?')">
+                        <input type="hidden" name="action" value="update_status">
+                        <input type="hidden" name="status" value="CANCELLED">
+                        <button type="submit" class="btn btn-outline-danger shadow-sm btn-sm px-4 rounded-pill fw-bold">
+                            <i class="bi bi-x-circle me-2"></i> Hủy đơn
+                        </button>
+                    </form>
+                    <?php endif; ?>
+
+                    <button class="btn btn-white border border-secondary border-opacity-10 shadow-sm btn-sm px-4 rounded-pill fw-bold" onclick="window.print()">
                         <i class="bi bi-printer me-2"></i> In Hóa Đơn
                     </button>
-                    <?php if ($order['order_status'] === 'CONFIRMED'): ?>
-                    <button class="btn btn-primary shadow-sm btn-sm px-4 rounded-pill fw-bold">
-                        <i class="bi bi-truck me-2"></i> Bắt Đầu Đóng Gói
-                    </button>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
