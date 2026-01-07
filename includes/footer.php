@@ -1,49 +1,72 @@
 ﻿</div> <!-- /.container -->
 
-<footer class="bg-light text-muted mt-5 pt-5 pb-4 border-top" style="border-top: 3px solid #ffc107 !important;">
+<footer class="tet-footer mt-5 pt-5 pb-4">
   <div class="container">
-    <div class="row mb-4">
-      <div class="col-md-3">
-        <h6 class="text-dark fw-bold mb-3">CHĂM SÓC KHÁCH HÀNG</h6>
-        <ul class="list-unstyled small">
-          <li><a href="/weblaptop/promotions.php" class="text-muted text-decoration-none">Chương Trình Khuyến Mãi</a></li>
-          <li><a href="/weblaptop/news.php" class="text-muted text-decoration-none">Tin Tức Công Nghệ</a></li>
-          <li><a href="#" class="text-muted text-decoration-none">Trung Tâm Trợ Giúp</a></li>
-          <li><a href="#" class="text-muted text-decoration-none">GrowTech Blog</a></li>
-          <li><a href="/weblaptop/shipping.php" class="text-muted text-decoration-none">Hướng Dẫn Mua Hàng</a></li>
-          <li><a href="/weblaptop/returns.php" class="text-muted text-decoration-none">Chính Sách Đổi Trả</a></li>
-        </ul>
-      </div>
-      <div class="col-md-3">
-        <h6 class="text-dark fw-bold mb-3">VỀ GROWTECH</h6>
-        <ul class="list-unstyled small">
-          <li><a href="#" class="text-muted text-decoration-none">Giới Thiệu</a></li>
-          <li><a href="#" class="text-muted text-decoration-none">Tuyển Dụng</a></li>
-          <li><a href="#" class="text-muted text-decoration-none">Điều Khoản</a></li>
-          <li><a href="#" class="text-muted text-decoration-none">Chính Sách Bảo Mật</a></li>
-        </ul>
-      </div>
-      <div class="col-md-3">
-        <h6 class="text-dark fw-bold mb-3">THANH TOÁN</h6>
-        <div class="d-flex flex-wrap gap-2">
-            <span class="sparkle-effect fs-4"></span>
-            <span class="sparkle-effect fs-4"></span>
-            <span class="sparkle-effect fs-4"></span>
+    <div class="row mb-5 gy-4">
+      <div class="col-lg-3 col-md-6">
+        <div class="footer-logo mb-4">
+          <h4 class="fw-bold text-white mb-0">GROW<span style="color: var(--tet-gold);">TECH</span></h4>
+          <p class="small text-white-50 mt-1">Chuẩn công nghệ – vững niềm tin</p>
+        </div>
+        <p class="small text-light opacity-75">Hệ thống bán lẻ laptop uy tín hàng đầu Việt Nam. Chúc Quý khách một năm mới An Khang Thịnh Vượng - Vạn Sự Như Ý!</p>
+        <div class="d-flex gap-2 mt-4">
+          <a href="#" class="social-btn"><i class="bi bi-facebook"></i></a>
+          <a href="#" class="social-btn"><i class="bi bi-youtube"></i></a>
+          <a href="#" class="social-btn"><i class="bi bi-tiktok"></i></a>
+          <a href="#" class="social-btn"><i class="bi bi-instagram"></i></a>
         </div>
       </div>
-      <div class="col-md-3">
-        <h6 class="text-dark fw-bold mb-3">THEO DÕI CHÚNG TÔI</h6>
-        <ul class="list-unstyled small">
-          <li><a href="#" class="text-muted text-decoration-none"><span class="sparkle-effect me-2"></span>Facebook</a></li>
-          <li><a href="#" class="text-muted text-decoration-none"><span class="sparkle-effect me-2"></span>Instagram</a></li>
-          <li><a href="#" class="text-muted text-decoration-none"><span class="sparkle-effect me-2"></span>LinkedIn</a></li>
+      
+      <div class="col-lg-3 col-md-6">
+        <h6 class="footer-title">HỖ TRỢ KHÁCH HÀNG</h6>
+        <ul class="footer-links list-unstyled">
+          <li><a href="/weblaptop/promotions.php">🔴 Khuyến mãi Tết 2026</a></li>
+          <li><a href="/weblaptop/shipping.php">🔴 Hướng dẫn mua hàng</a></li>
+          <li><a href="/weblaptop/returns.php">🔴 Chính sách đổi trả</a></li>
+          <li><a href="#">🔴 Tra cứu bảo hành</a></li>
+          <li><a href="/weblaptop/contact.php">🔴 Liên hệ hỗ trợ</a></li>
         </ul>
       </div>
+
+      <div class="col-lg-3 col-md-6">
+        <h6 class="footer-title">VỀ GROWTECH</h6>
+        <ul class="footer-links list-unstyled">
+          <li><a href="#">🔴 Giới thiệu công ty</a></li>
+          <li><a href="#">🔴 Tuyển dụng</a></li>
+          <li><a href="#">🔴 Điều khoản dịch vụ</a></li>
+          <li><a href="#">🔴 Chính sách bảo mật</a></li>
+          <li><a href="/weblaptop/news.php">🔴 Tin tức công nghệ</a></li>
+        </ul>
+      </div>
+
+      <div class="col-lg-3 col-md-6">
+        <h6 class="footer-title">LIÊN HỆ</h6>
+        <div class="contact-info text-light small">
+          <p class="mb-2"><i class="bi bi-geo-alt-fill me-2 text-warning"></i> 123 Nguyễn Thiện Thành, Phường Hòa Thuận, tỉnh Vĩnh Long</p>
+          <p class="mb-2"><i class="bi bi-telephone-fill me-2 text-warning"></i> Hotline: 1900 1234 (8:00 - 22:00)</p>
+          <p class="mb-2"><i class="bi bi-envelope-fill me-2 text-warning"></i> Email: growtech@gmail.com</p>
+          <div class="mt-4">
+            <h6 class="footer-title fs-7 mb-3" style="font-size: 13px;">CHẤP NHẬN THANH TOÁN</h6>
+            <div class="d-flex flex-wrap gap-2 payment-methods">
+              <img src="https://img.icons8.com/color/48/000000/visa.png" width="40" alt="Visa">
+              <img src="https://img.icons8.com/color/48/000000/mastercard.png" width="40" alt="Mastercard">
+              <img src="https://img.icons8.com/color/48/000000/jcb.png" width="40" alt="JCB">
+              <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" width="30" height="30" alt="MoMo" style="border-radius: 4px;">
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <hr>
-    <div class="text-center small mt-4">
-      <p> &copy; 2024 GrowTech. Chuẩn công nghệ – vững niềm tin.</p>
-      <p>Quốc gia & Khu vực: Việt Nam | Singapore | Indonesia | Thái Lan | Malaysia</p>
+    
+    <div class="footer-bottom pt-4 border-top border-opacity-25 border-white">
+      <div class="row align-items-center">
+        <div class="col-md-6 text-center text-md-start">
+          <p class="mb-0 small text-light opacity-75">&copy; 2026 <strong>GrowTech</strong>. Bản quyền thuộc về hlv.</p>
+        </div>
+        <div class="col-md-6 text-center text-md-end mt-3 mt-md-0">
+          <img src="https://web.archive.org/web/20210512124500im_/http://online.gov.vn/PublicImages/2015/08/27/11/20150827110756-dathongbao.png" alt="Đã thông báo Bộ Công Thương" height="40">
+        </div>
+      </div>
     </div>
   </div>
 </footer>

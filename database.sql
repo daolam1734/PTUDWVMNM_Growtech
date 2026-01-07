@@ -257,48 +257,26 @@ INSERT IGNORE INTO `categories` (`name`,`slug`,`description`) VALUES
 
 -- Brands
 INSERT IGNORE INTO `brands` (`name`,`logo`) VALUES
-('ZenThế',''),
-('GamerPro VN',''),
-('Văn Phòng Max','');
+
+
 
 -- Products (idempotent using unique sku)
 INSERT IGNORE INTO `products` (`sku`,`name`,`slug`,`brand_id`,`category_id`,`short_description`,`description`,`price`,`stock`,`is_active`)
 VALUES
 ('ULTRA-001','Alpha Mỏng Nhẹ','alpha-mong-nhe',
-  (SELECT id FROM brands WHERE name='ZenThế'),
   (SELECT id FROM categories WHERE name='Mỏng nhẹ'),
   '13.3" FHD, Intel Core i5, 8GB RAM, 256GB SSD','Mô tả chi tiết Alpha Mỏng Nhẹ',799.00,10,1),
 ('GAME-002','Quái Vật Chơi Game',' Quai-vat-choi-game',
-  (SELECT id FROM brands WHERE name='GamerPro VN'),
   (SELECT id FROM categories WHERE name='Chơi game'),
   '15.6" 144Hz, Intel Core i7, 16GB RAM, RTX 3060, 512GB SSD','Mô tả chi tiết Quái Vật Chơi Game',1299.00,5,1),
-('OFF-003','Văn Phòng Pro','van-phong-pro',
-  (SELECT id FROM brands WHERE name='Văn Phòng Max'),
   (SELECT id FROM categories WHERE name='Văn phòng'),
   '14" HD, AMD Ryzen 5, 8GB RAM, 256GB SSD','Mô tả chi tiết Văn Phòng Pro',599.00,15,1);
 
 -- Specifications
-INSERT INTO `product_specifications` (`product_id`,`cpu`,`ram`,`storage`,`gpu`,`screen`,`os`,`weight`,`battery`)
-SELECT p.id,'Intel Core i5-1135G7','8GB DDR4','256GB NVMe SSD','Intel Iris Xe','13.3" FHD','Windows 11','1.2kg','42Wh' FROM products p WHERE p.sku='ULTRA-001'
-ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
 
-INSERT INTO `product_specifications` (`product_id`,`cpu`,`ram`,`storage`,`gpu`,`screen`,`os`,`weight`,`battery`)
-SELECT p.id,'Intel Core i7-11800H','16GB DDR4','512GB NVMe SSD','NVIDIA RTX 3060','15.6" FHD 144Hz','Windows 11','2.4kg','90Wh' FROM products p WHERE p.sku='GAME-002'
-ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
-
-INSERT INTO `product_specifications` (`product_id`,`cpu`,`ram`,`storage`,`gpu`,`screen`,`os`,`weight`,`battery`)
-SELECT p.id,'AMD Ryzen 5 4500U','8GB DDR4','256GB NVMe SSD','Integrated','14" HD','Windows 11','1.5kg','50Wh' FROM products p WHERE p.sku='OFF-003'
-ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
 
 -- Images
-INSERT IGNORE INTO `product_images` (`product_id`,`url`,`alt`,`position`)
-SELECT p.id,'https://placehold.co/600x400?text=Ultrabook+Alpha','Ultrabook Alpha - main',0 FROM products p WHERE p.sku='ULTRA-001';
 
-INSERT IGNORE INTO `product_images` (`product_id`,`url`,`alt`,`position`)
-SELECT p.id,'https://placehold.co/600x400?text=Gaming+Beast','Gaming Beast - main',0 FROM products p WHERE p.sku='GAME-002';
-
-INSERT IGNORE INTO `product_images` (`product_id`,`url`,`alt`,`position`)
-SELECT p.id,'https://placehold.co/600x400?text=Office+Pro','Office Pro - main',0 FROM products p WHERE p.sku='OFF-003';
 
 -- Users (admin created via create_db.php is recommended; we add a sample customer)
 -- Note: Replace the password with a proper hash produced by PHP: php -r "echo password_hash('password', PASSWORD_DEFAULT).PHP_EOL;"
@@ -486,10 +464,8 @@ SELECT o.id, 'da_xac_nhan', 'da_gui', (SELECT id FROM users WHERE username='admi
 INSERT INTO `orders` (`order_no`,`user_id`,`address_id`,`subtotal`,`shipping_fee`,`discount`,`total`,`order_status`,`payment_method`,`payment_status`,`notes`)
 SELECT CONCAT('WL-', DATE_FORMAT(NOW(),'%Y%m%d'), '-', LPAD(FLOOR(RAND()*10000),4,'0')),
   u.id, a.id, p.price as subtotal, 15.00 as shipping_fee, 0.00 as discount, p.price + 15.00 as total, 'dang_cho', 'vi_dien_tu', 'that_bai', 'Thanh toán ví thất bại - mẫu'
-FROM users u JOIN user_addresses a ON a.user_id=u.id JOIN products p ON p.sku='OFF-003' WHERE u.email='tran.van@gmail.com' LIMIT 1;
 
 INSERT INTO `order_items` (`order_id`,`product_id`,`product_name`,`sku`,`quantity`,`unit_price`,`subtotal`)
-SELECT o.id, p.id, p.name, p.sku, 1, p.price, p.price FROM orders o JOIN users u ON o.user_id=u.id JOIN products p ON p.sku='OFF-003' WHERE u.email='tran.van@gmail.com' AND o.payment_method='vi_dien_tu' LIMIT 1;
 
 -- Payment thất bại record
 INSERT INTO `payments` (`order_id`,`payment_method`,`amount`,`status`,`transaction_id`,`provider_info`)
@@ -537,10 +513,7 @@ INSERT IGNORE INTO `brands` (`name`,`logo`,`created_at`) VALUES
 ('Asus','', '2023-12-01 15:00:00'),
 ('Lenovo','', '2023-12-03 11:00:00'),
 ('HP','', '2023-12-04 10:00:00'),
-('Razer','', '2023-12-05 09:00:00'),
-('Acer','', '2023-12-06 10:00:00'),
-('Microsoft','', '2023-12-07 15:00:00');
-
+  ('Acer','', '2023-12-06 10:00:00');
 -- Categories bổ sung
 INSERT IGNORE INTO `categories` (`name`,`slug`,`description`,`created_at`) VALUES
 ('Laptop Văn Phòng','laptop-van-phong','Laptop dành cho công việc văn phòng', '2023-12-01 08:00:00'),
@@ -558,46 +531,18 @@ VALUES
 ('ASUSROG14','Asus ROG Zephyrus G14 (2023)','asus-rog-zephyrus-g14-2023', (SELECT id FROM brands WHERE name='Asus'), (SELECT id FROM categories WHERE name='Laptop Gaming'), 'Laptop gaming siêu mạnh, thiết kế mỏng','AMD Ryzen 9 6900HS, RAM 32GB, SSD 1TB, GPU NVIDIA RTX 3060. Màn hình 14-inch 120Hz, thiết kế siêu mỏng và mạnh mẽ.', 44990000.00, NULL, 20, 1, '2023-12-01 15:00:00','2023-12-01 15:00:00'),
 ('THINKPADX1','Lenovo ThinkPad X1 Carbon Gen 9','lenovo-thinkpad-x1-carbon-gen-9', (SELECT id FROM brands WHERE name='Lenovo'), (SELECT id FROM categories WHERE name='Laptop Doanh Nhân'), 'Laptop doanh nhân bền bỉ, hiệu suất cao','Intel Core i7, RAM 16GB, SSD 512GB, Màn hình 14-inch 4K UHD, thiết kế bền bỉ, trọng lượng nhẹ.', 39000000.00, NULL, 40, 1, '2023-12-03 11:00:00','2023-12-03 11:00:00'),
 ('DELLINSPIRON15','Dell Inspiron 15 5000','dell-inspiron-15-5000', (SELECT id FROM brands WHERE name='Dell'), (SELECT id FROM categories WHERE name='Laptop Học Tập'), 'Laptop giá rẻ, phù hợp cho học sinh, sinh viên','Intel Core i5-1135G7, RAM 8GB, SSD 512GB. Màn hình 15.6-inch Full HD, máy tính xách tay giá rẻ, đủ mạnh cho các tác vụ học tập cơ bản.', 15990000.00, NULL, 100, 1, '2023-12-03 14:00:00','2023-12-03 14:00:00'),
-('PAVILIONX360','HP Pavilion x360 14','hp-pavilion-x360-14', (SELECT id FROM brands WHERE name='HP'), (SELECT id FROM categories WHERE name='Laptop 2 trong 1'), 'Laptop 2 trong 1, màn hình cảm ứng','Intel Core i5, RAM 8GB, SSD 512GB. Màn hình 14-inch cảm ứng, thiết kế linh hoạt có thể xoay 360 độ.', 22500000.00, 20000000.00, 60, 1, '2023-12-04 10:00:00','2023-12-04 10:00:00'),
-('RAZERBLADE15','Razer Blade 15 Base Model','razer-blade-15-base', (SELECT id FROM brands WHERE name='Razer'), (SELECT id FROM categories WHERE name='Laptop Gaming'), 'Laptop gaming mạnh mẽ, thiết kế mỏng','Intel Core i7-12800H, RAM 16GB, SSD 1TB, GPU NVIDIA RTX 3070 Ti. Màn hình 15.6-inch Full HD 165Hz.', 52000000.00, 49500000.00, 10, 1, '2023-12-05 09:00:00','2023-12-05 09:00:00'),
+('PAVILIONX360','HP Pavilion x360 14','hp-pavilion-x360-14', (SELECT id FROM brands WHERE name='HP'), (SELECT id FROM categories WHERE name='Laptop 2 trong 1'), 'Laptop 2 trong 1, màn hình cảm ứng','Intel Core i5, RAM 8GB, SSD 512GB. Màn hình 14-inch cảm ứng, thiết kế linh hoạt có thể xoay 360 độ.', 22500000.00, 20000000.00, 60, 1, '2023-12-04 10:00:00','2023-12-04 10:00:00'), (SELECT id FROM categories WHERE name='Laptop Gaming'), 'Laptop gaming mạnh mẽ, thiết kế mỏng','Intel Core i7-12800H, RAM 16GB, SSD 1TB, GPU NVIDIA RTX 3070 Ti. Màn hình 15.6-inch Full HD 165Hz.', 52000000.00, 49500000.00, 10, 1, '2023-12-05 09:00:00','2023-12-05 09:00:00'),
 ('PREDATORHELIOS','Acer Predator Helios 300','acer-predator-helios-300', (SELECT id FROM brands WHERE name='Acer'), (SELECT id FROM categories WHERE name='Laptop Gaming'), 'Laptop gaming với hiệu năng vượt trội','Intel Core i7-11800H, RAM 16GB, SSD 512GB, GPU NVIDIA RTX 3060. Màn hình 15.6-inch Full HD 144Hz.', 35500000.00, 32000000.00, 15, 1, '2023-12-06 10:00:00','2023-12-06 10:00:00'),
-('XPS15','Dell XPS 15 9500','dell-xps-15-9500', (SELECT id FROM brands WHERE name='Dell'), (SELECT id FROM categories WHERE name='Laptop Cao Cấp'), 'Laptop cao cấp, màn hình 15.6-inch','Intel Core i7-10750H, RAM 16GB, SSD 512GB. Màn hình 15.6-inch 4K OLED, thiết kế tuyệt đẹp và hiệu suất mạnh mẽ.', 49000000.00, 45000000.00, 25, 1, '2023-12-07 10:00:00','2023-12-07 10:00:00'),
-('SURFACELAPTOP4','Microsoft Surface Laptop 4','microsoft-surface-laptop-4', (SELECT id FROM brands WHERE name='Microsoft'), (SELECT id FROM categories WHERE name='Laptop Văn Phòng'), 'Laptop mỏng nhẹ, màn hình 15-inch','Intel Core i7-1185G7, RAM 16GB, SSD 512GB. Màn hình 15-inch PixelSense, thiết kế mỏng nhẹ, dành cho công việc văn phòng và giải trí.', 29990000.00, NULL, 30, 1, '2023-12-07 15:00:00','2023-12-07 15:00:00');
+('XPS15','Dell XPS 15 9500','dell-xps-15-9500', (SELECT id FROM brands WHERE name='Dell'), (SELECT id FROM categories WHERE name='Laptop Cao Cấp'), 'Laptop cao cấp, màn hình 15.6-inch','Intel Core i7-10750H, RAM 16GB, SSD 512GB. Màn hình 15.6-inch 4K OLED, thiết kế tuyệt đẹp và hiệu suất mạnh mẽ.', 49000000.00, 45000000.00, 25, 1, '2023-12-07 10:00:00','2023-12-07 10:00:00'); (SELECT id FROM categories WHERE name='Laptop Cao Cấp'), 'Laptop cao cấp, màn hình 15.6-inch','Intel Core i7-10750H, RAM 16GB, SSD 512GB. Màn hình 15.6-inch 4K OLED, thiết kế tuyệt đẹp và hiệu suất mạnh mẽ.', 49000000.00, 45000000.00, 25, 1, '2023-12-07 10:00:00','2023-12-07 10:00:00'); (SELECT id FROM categories WHERE name='Laptop Cao Cấp'), 'Laptop cao cấp, màn hình 15.6-inch','Intel Core i7-10750H, RAM 16GB, SSD 512GB. Màn hình 15.6-inch 4K OLED, thiết kế tuyệt đẹp và hiệu suất mạnh mẽ.', 49000000.00, 45000000.00, 25, 1, '2023-12-07 10:00:00','2023-12-07 10:00:00'), (SELECT id FROM categories WHERE name='Laptop Văn Phòng'), 'Laptop mỏng nhẹ, màn hình 15-inch','Intel Core i7-1185G7, RAM 16GB, SSD 512GB. Màn hình 15-inch PixelSense, thiết kế mỏng nhẹ, dành cho công việc văn phòng và giải trí.', 29990000.00, NULL, 30, 1, '2023-12-07 15:00:00','2023-12-07 15:00:00');
 
 -- Thông số kỹ thuật mẫu (product_specifications)
-INSERT INTO `product_specifications` (`product_id`,`cpu`,`ram`,`storage`,`gpu`,`screen`,`os`,`weight`,`battery`,`other`)
-SELECT p.id,'Intel Core i7-1165G7','16GB LPDDR4x','512GB SSD','Intel Iris Xe','13.4" FHD','Windows 11','1.2kg','52Wh','Thiết kế viền mỏng' FROM products p WHERE p.sku='DELLXPS13' ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
 
-INSERT INTO `product_specifications` (`product_id`,`cpu`,`ram`,`storage`,`gpu`,`screen`,`os`,`weight`,`battery`,`other`)
-SELECT p.id,'Apple M2','8GB Unified','256GB SSD','Apple Integrated','13.6" Retina','macOS','1.2kg','50Wh','M2 - Hiệu năng tốt cho sáng tạo nội dung' FROM products p WHERE p.sku='MACBOOKAIR2022' ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
 
-INSERT INTO `product_specifications` (`product_id`,`cpu`,`ram`,`storage`,`gpu`,`screen`,`os`,`weight`,`battery`,`other`)
-SELECT p.id,'AMD Ryzen 9 6900HS','32GB DDR5','1TB NVMe SSD','NVIDIA RTX 3060','14" 120Hz','Windows 11','1.6kg','76Wh','Dành cho game thủ và sáng tạo nội dung' FROM products p WHERE p.sku='ASUSROG14' ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
 
-INSERT INTO `product_specifications` (`product_id`,`cpu`,`ram`,`storage`,`gpu`,`screen`,`os`,`weight`,`battery`,`other`)
-SELECT p.id,'Intel Core i7-1165G7','16GB LPDDR4','512GB SSD','Intel Integrated','14" 4K UHD','Windows 11','1.1kg','57Wh','Dòng ThinkPad bền bỉ, phù hợp doanh nhân' FROM products p WHERE p.sku='THINKPADX1' ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
-
-INSERT INTO `product_specifications` (`product_id`,`cpu`,`ram`,`storage`,`gpu`,`screen`,`os`,`weight`,`battery`,`other`)
-SELECT p.id,'Intel Core i5-1135G7','8GB DDR4','512GB SSD','Intel Integrated','15.6" FHD','Windows 11','1.8kg','55Wh','Giá tốt cho sinh viên' FROM products p WHERE p.sku='DELLINSPIRON15' ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
-
-INSERT INTO `product_specifications` (`product_id`,`cpu`,`ram`,`storage`,`gpu`,`screen`,`os`,`weight`,`battery`,`other`)
-SELECT p.id,'Intel Core i5-1135G7','8GB DDR4','512GB SSD','Intel Integrated','14" FHD cảm ứng','Windows 11','1.4kg','54Wh','Màn hình xoay 360°' FROM products p WHERE p.sku='PAVILIONX360' ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
-
-INSERT INTO `product_specifications` (`product_id`,`cpu`,`ram`,`storage`,`gpu`,`screen`,`os`,`weight`,`battery`,`other`)
-SELECT p.id,'Intel Core i7-12800H','16GB DDR5','1TB NVMe SSD','NVIDIA RTX 3070 Ti','15.6" FHD 165Hz','Windows 11','2.2kg','80Wh','Mã cấu hình cao dành cho game thủ và creator' FROM products p WHERE p.sku='RAZERBLADE15' ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
-
-INSERT INTO `product_specifications` (`product_id`,`cpu`,`ram`,`storage`,`gpu`,`screen`,`os`,`weight`,`battery`,`other`)
-SELECT p.id,'Intel Core i7-11800H','16GB DDR4','512GB NVMe SSD','NVIDIA RTX 3060','15.6" FHD 144Hz','Windows 11','2.3kg','76Wh','Hệ thống tản nhiệt hiệu quả' FROM products p WHERE p.sku='PREDATORHELIOS' ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
-
-INSERT INTO `product_specifications` (`product_id`,`cpu`,`ram`,`storage`,`gpu`,`screen`,`os`,`weight`,`battery`,`other`)
-SELECT p.id,'Intel Core i7-10750H','16GB DDR4','512GB NVMe SSD','Intel Integrated/Optional NVIDIA','15.6" 4K OLED','Windows 11','1.9kg','80Wh','Laptop cao cấp cho sáng tạo nội dung' FROM products p WHERE p.sku='XPS15' ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
-
-INSERT INTO `product_specifications` (`product_id`,`cpu`,`ram`,`storage`,`gpu`,`screen`,`os`,`weight`,`battery`,`other`)
-SELECT p.id,'Intel Core i7-1185G7','16GB LPDDR4x','512GB SSD','Intel Iris Xe','15" PixelSense','Windows 11','1.5kg','60Wh','Màn hình PixelSense cho thiết kế' FROM products p WHERE p.sku='SURFACELAPTOP4' ON DUPLICATE KEY UPDATE cpu=VALUES(cpu);
 
 -- Ảnh sản phẩm (placeholder)
 INSERT IGNORE INTO `product_images` (`product_id`,`url`,`alt`,`position`)
-SELECT p.id, CONCAT('https://placehold.co/800x600?text=', REPLACE(p.name,' ','+')), CONCAT(p.name, ' - hình chính'), 0 FROM products p WHERE p.sku IN ('DELLXPS13','MACBOOKAIR2022','ASUSROG14','THINKPADX1','DELLINSPIRON15','PAVILIONX360','RAZERBLADE15','PREDATORHELIOS','XPS15','SURFACELAPTOP4');
+SELECT p.id, CONCAT('https://placehold.co/800x600?text=', REPLACE(p.name,' ','+')), CONCAT(p.name, ' - hình chính'), 0 FROM products p WHERE p.sku IN ('DELLXPS13','MACBOOKAIR2022','ASUSROG14','THINKPADX1','DELLINSPIRON15','PAVILIONX360','PREDATORHELIOS','XPS15');
 
 -- Kết thúc phần cập nhật sản phẩm mẫu
 

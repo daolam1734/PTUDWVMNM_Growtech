@@ -47,24 +47,14 @@ $menu_brands = $stmt_menu_brands->fetchAll();
       .header-spacer { height: 110px; }
     }
     .tet-header.shrink {
-      padding-bottom: 8px !important;
-      box-shadow: 0 2px 15px rgba(0,0,0,0.4);
+      padding-bottom: 12px !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     }
     .tet-header.shrink .nav-top {
       display: none !important;
     }
-    .tet-header.shrink .logo-text {
-      font-size: 1.4rem !important;
-    }
-    .tet-header.shrink .slogan, .tet-header.shrink .tet-2026-badge, .tet-header.shrink .main-menu-nav {
+    .tet-header.shrink .main-menu-nav {
       display: none !important;
-    }
-    .tet-header.shrink .mt-3 {
-      margin-top: 8px !important;
-    }
-    .tet-header.shrink .search-bar-container {
-      height: 38px;
-      margin: 0 30px;
     }
     .tet-header a { color: #fff; text-decoration: none; font-size: 13px; transition: color 0.2s; }
     .tet-header a:hover { color: var(--tet-gold); }
@@ -246,6 +236,20 @@ $menu_brands = $stmt_menu_brands->fetchAll();
     .main-menu-nav .nav-link:hover {
       color: var(--tet-gold) !important;
     }
+    
+    /* Show dropdown on hover for desktop */
+    @media (min-width: 992px) {
+      .nav-item.dropdown:hover > .dropdown-menu {
+        display: block;
+      }
+      .nav-item.dropdown:hover > .nav-link {
+        color: var(--tet-gold) !important;
+      }
+      .nav-item.dropdown:hover > .nav-link::after {
+        width: 30px;
+      }
+    }
+
     .megamenu { position: static !important; }
     .megamenu .dropdown-menu {
       width: 100%;
@@ -359,17 +363,6 @@ $menu_brands = $stmt_menu_brands->fetchAll();
       background: rgba(211, 47, 47, 0.1);
     }
     
-    /* Megamenu specific overrides */
-    .megamenu .dropdown-menu {
-      width: 100%;
-      left: 0;
-      right: 0;
-      top: 100%;
-      border-radius: 0 0 20px 20px;
-      padding: 30px 0;
-      animation: slideUp 0.3s ease-out;
-    }
-    
     /* Pulse animation for Lì xì */
     @keyframes pulse-gold {
       0% { transform: scale(1); text-shadow: 0 0 0 rgba(255, 193, 7, 0); }
@@ -378,6 +371,97 @@ $menu_brands = $stmt_menu_brands->fetchAll();
     }
     .nav-link.text-warning {
       animation: pulse-gold 2s infinite ease-in-out;
+    }
+
+    /* Tet Footer Styling */
+    .tet-footer {
+      background: linear-gradient(135deg, #8e0000, #c62828);
+      background-image: 
+        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"), 
+        linear-gradient(135deg, #8e0000, #c62828);
+      color: #fff;
+      border-top: 5px solid var(--tet-gold);
+      position: relative;
+      overflow: hidden;
+    }
+    .tet-footer::before {
+      content: '🏮';
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-size: 3rem;
+      opacity: 0.2;
+    }
+    .tet-footer::after {
+      content: '🏮';
+      position: absolute;
+      bottom: 20px;
+      left: 30px;
+      font-size: 3rem;
+      opacity: 0.2;
+    }
+    .footer-title {
+      color: var(--tet-gold);
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 25px;
+      position: relative;
+      display: inline-block;
+      text-transform: uppercase;
+    }
+    .footer-title::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 40px;
+      height: 2px;
+      background: var(--tet-gold);
+    }
+    .footer-links li {
+      margin-bottom: 12px;
+      transition: all 0.3s;
+    }
+    .footer-links a {
+      color: rgba(255, 255, 255, 0.8) !important;
+      text-decoration: none;
+      font-size: 14px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+    }
+    .footer-links a:hover {
+      color: var(--tet-gold) !important;
+      transform: translateX(8px);
+    }
+    .social-btn {
+      width: 36px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff !important;
+      transition: all 0.3s;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .social-btn:hover {
+      background: var(--tet-gold);
+      color: var(--tet-red) !important;
+      transform: translateY(-3px);
+      border-color: var(--tet-gold);
+    }
+    .payment-methods img {
+      background: #fff;
+      padding: 3px;
+      border-radius: 4px;
+      filter: grayscale(0.2);
+      transition: all 0.3s;
+    }
+    .payment-methods img:hover {
+      filter: grayscale(0);
+      transform: scale(1.1);
     }
   </style>
 </head>
