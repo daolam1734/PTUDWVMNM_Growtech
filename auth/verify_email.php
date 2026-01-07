@@ -9,6 +9,15 @@ if ($token) {
     if ($u && (!$u['verification_expires'] || strtotime($u['verification_expires']) >= time())) {
         $stmt2 = $pdo->prepare('UPDATE users SET email_verified = 1, verification_token = NULL, verification_expires = NULL WHERE id = ?');
         $stmt2->execute([$u['id']]);
+
+        // Send confirmation notification
+        createNotification(
+            $u['id'], 
+            "Xác thực tài khoản thành công", 
+            "Chúc mừng! Email của bạn đã được xác thực thành công. Bây giờ bạn có thể trải nghiệm đầy đủ các tính năng của Growtech.", 
+            'system'
+        );
+
         set_flash('success', 'Xác thực email thành công. Bạn có thể đăng nhập ngay.');
     } else {
         set_flash('error', 'Liên kết xác thực không hợp lệ hoặc đã hết hạn.');

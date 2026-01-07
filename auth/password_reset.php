@@ -15,6 +15,16 @@ if (!$reset) {
     if (empty($errors)) {
         resetUserPassword($reset['user_id'], $password);
         markPasswordResetUsed($reset['id']);
+
+        // Send security notification
+        require_once __DIR__ . '/../functions.php';
+        createNotification(
+            $reset['user_id'], 
+            "Mật khẩu đã được thay đổi", 
+            "Mật khẩu của bạn vừa được thay đổi thành công. Nếu bạn không thực hiện việc này, vui lòng liên hệ hỗ trợ ngay lập tức.", 
+            'system'
+        );
+
         set_flash('success', 'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay bây giờ.');
         header('Location: login.php');
         exit;

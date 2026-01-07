@@ -39,6 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $expires = date('Y-m-d H:i:s', strtotime('+2 day'));
             setEmailVerificationToken($uid, $token, $expires);
             $link = sendVerificationEmailSimulated($email, $token);
+
+            // Welcome Notification
+            createNotification(
+                $uid, 
+                "Chào mừng bạn đến với Growtech", 
+                "Cảm ơn bạn đã tin tưởng và đăng ký tài khoản. Hãy bắt đầu mua sắm ngay hôm nay!", 
+                'system'
+            );
+
             set_flash('success', "Đăng ký thành công. Vui lòng kiểm tra email để xác thực tài khoản. (Link test: <a href='".htmlspecialchars($link)."' target='_blank'>Xác thực</a>)");
             header('Location: login.php');
             exit;
