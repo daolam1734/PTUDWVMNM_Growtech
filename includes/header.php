@@ -237,10 +237,124 @@ $menu_brands = $stmt_menu_brands->fetchAll();
       color: var(--tet-gold) !important;
     }
     
+    /* Better Megamenu styling */
+    .nav-item.dropdown.megamenu-parent {
+      position: static !important;
+    }
+    .megamenu-parent .dropdown-menu {
+      width: 90vw;
+      max-width: 1100px;
+      left: 50% !important;
+      right: auto !important;
+      transform: translateX(-50%) translateY(20px) !important;
+      padding: 30px;
+      border: none;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      border-top: 5px solid var(--tet-gold);
+      opacity: 0;
+      visibility: hidden;
+      display: block;
+      transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+    .megamenu-parent:hover .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0) !important;
+    }
+    .megamenu-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--tet-red);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      letter-spacing: 0.5px;
+    }
+    .megamenu-title::after {
+      content: "";
+      flex: 1;
+      height: 2px;
+      background: #eee;
+      margin-left: 15px;
+    }
+    .megamenu-link {
+      color: #333 !important;
+      font-weight: 500;
+      padding: 8px 12px !important;
+      border-radius: 8px;
+      transition: all 0.2s;
+      background: #f8f9fa;
+      border: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .megamenu-link:hover {
+      background: var(--tet-light-gold);
+      color: var(--tet-red) !important;
+      border-color: var(--tet-gold);
+      transform: translateX(5px);
+    }
+    .megamenu-link i {
+      font-size: 18px;
+      margin-right: 12px;
+      color: var(--tet-red);
+    }
+    .megamenu-brand-item {
+      text-align: center;
+      padding: 15px;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      transition: all 0.3s;
+      display: block;
+      text-decoration: none;
+      height: 100%;
+      background: #fff;
+    }
+    .megamenu-brand-item:hover {
+      border-color: var(--tet-red);
+      box-shadow: 0 5px 15px rgba(211, 47, 47, 0.1);
+      transform: translateY(-3px);
+    }
+    .megamenu-brand-item img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      margin-bottom: 8px;
+    }
+    .megamenu-brand-item span {
+      display: block;
+      font-size: 12px;
+      font-weight: bold;
+      color: #555;
+    }
+    .tet-badge {
+      background: var(--tet-red);
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 5px;
+      vertical-align: middle;
+    }
+    
     /* Show dropdown on hover for desktop */
     @media (min-width: 992px) {
       .nav-item.dropdown:hover > .dropdown-menu {
         display: block;
+        opacity: 1;
+        visibility: visible;
+        margin-top: 0;
+      }
+      .nav-item.dropdown > .dropdown-menu {
+        display: block;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        margin-top: 20px;
       }
       .nav-item.dropdown:hover > .nav-link {
         color: var(--tet-gold) !important;
@@ -248,70 +362,6 @@ $menu_brands = $stmt_menu_brands->fetchAll();
       .nav-item.dropdown:hover > .nav-link::after {
         width: 30px;
       }
-    }
-
-    .megamenu { position: static !important; }
-    .megamenu .dropdown-menu {
-      width: 100%;
-      left: 0;
-      right: 0;
-      top: 100%;
-      border-radius: 0 0 20px 20px;
-      border: none;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-      padding: 30px 0;
-      background: #fff;
-      margin-top: 0;
-      border-top: 4px solid var(--tet-gold);
-      animation: slideUp 0.3s ease-out;
-    }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .megamenu-title {
-      color: var(--tet-red);
-      font-weight: 800;
-      font-size: 16px;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #f8f9fa;
-      display: block;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      position: relative;
-    }
-    .megamenu-title::after {
-      content: '';
-      position: absolute;
-      bottom: -2px;
-      left: 0;
-      width: 50px;
-      height: 2px;
-      background: var(--tet-gold);
-    }
-    .megamenu .dropdown-item {
-      padding: 10px 0;
-      font-size: 14px;
-      color: #555 !important;
-      transition: all 0.3s;
-      background: transparent !important;
-      display: flex;
-      align-items: center;
-    }
-    .megamenu .dropdown-item i {
-      font-size: 8px;
-      margin-right: 10px;
-      color: var(--tet-gold);
-      opacity: 0;
-      transition: all 0.3s;
-    }
-    .megamenu .dropdown-item:hover {
-      color: var(--tet-red) !important;
-      padding-left: 15px;
-    }
-    .megamenu .dropdown-item:hover i {
-      opacity: 1;
     }
 
     /* General Dropdown Styling */
@@ -604,43 +654,78 @@ $menu_brands = $stmt_menu_brands->fetchAll();
               <a class="nav-link" href="/weblaptop/index.php"><i class="bi bi-house-door me-1"></i> Trang chủ</a>
             </li>
             
-            <li class="nav-item dropdown megamenu">
+            <li class="nav-item dropdown megamenu-parent">
               <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Sản phẩm</a>
               <div class="dropdown-menu">
-                <div class="container">
+                <div class="container-fluid">
                   <div class="row">
-                    <div class="col-md-4">
-                      <div class="megamenu-title">Thương hiệu</div>
-                      <div class="row g-2">
+                    <!-- Categories Column -->
+                    <div class="col-md-5 border-end">
+                      <div class="megamenu-title">Theo nhu cầu</div>
+                      <div class="row">
+                        <div class="col-6">
+                          <a href="/weblaptop/search.php?category_id=1" class="megamenu-link">
+                            <i class="bi bi-laptop"></i> Văn Phòng
+                          </a>
+                          <a href="/weblaptop/search.php?category_id=2" class="megamenu-link">
+                            <i class="bi bi-controller"></i> Gaming <span class="tet-badge">Hot</span>
+                          </a>
+                          <a href="/weblaptop/search.php?category_id=3" class="megamenu-link">
+                            <i class="bi bi-briefcase"></i> Doanh Nhân
+                          </a>
+                        </div>
+                        <div class="col-6">
+                          <a href="/weblaptop/search.php?category_id=4" class="megamenu-link">
+                            <i class="bi bi-mortarboard"></i> Sinh Viên
+                          </a>
+                          <a href="/weblaptop/search.php?category_id=5" class="megamenu-link">
+                            <i class="bi bi-gem"></i> Cao Cấp
+                          </a>
+                          <a href="/weblaptop/search.php?category_id=6" class="megamenu-link">
+                            <i class="bi bi-unfold-vertical"></i> 2-in-1
+                          </a>
+                        </div>
+                      </div>
+                      
+                      <div class="mt-4 p-3 rounded-4 bg-light text-center border">
+                        <p class="small mb-2 fw-bold text-muted">Hỗ trợ chọn mua Laptop Tết?</p>
+                        <a href="/weblaptop/contact.php" class="btn btn-sm btn-outline-danger rounded-pill">Liên hệ ngay</a>
+                      </div>
+                    </div>
+
+                    <!-- Brands Column -->
+                    <div class="col-md-7">
+                      <div class="megamenu-title">Thương hiệu chính hãng</div>
+                      <div class="row g-3">
                         <?php foreach ($menu_brands as $b): ?>
-                          <div class="col-6">
-                            <a class="dropdown-item p-2 d-flex align-items-center border rounded-3 mb-1" href="/weblaptop/search.php?brand=<?php echo urlencode($b['name']); ?>" style="background: #f8f9fa !important;">
+                          <div class="col-4 col-lg-3">
+                            <a class="megamenu-brand-item" href="/weblaptop/search.php?brand=<?php echo urlencode($b['name']); ?>">
                               <?php if ($b['logo']): ?>
-                                <img src="<?php echo htmlspecialchars($b['logo']); ?>" alt="<?php echo htmlspecialchars($b['name']); ?>" style="width: 24px; height: 24px; object-fit: contain; margin-right: 8px;">
+                                <img src="<?php echo htmlspecialchars($b['logo']); ?>" alt="<?php echo htmlspecialchars($b['name']); ?>">
                               <?php else: ?>
-                                <i class="bi bi-tag me-2" style="font-size: 14px; color: var(--tet-red);"></i>
+                                <div class="mb-2 text-danger"><i class="bi bi-tag-fill" style="font-size: 24px;"></i></div>
                               <?php endif; ?>
-                              <span class="small fw-bold"><?php echo htmlspecialchars($b['name']); ?></span>
+                              <span><?php echo htmlspecialchars($b['name']); ?></span>
                             </a>
                           </div>
                         <?php endforeach; ?>
+                        
+                        <div class="col-4 col-lg-3">
+                          <a class="megamenu-brand-item d-flex flex-column justify-content-center align-items-center bg-danger text-white border-0" href="/weblaptop/search.php">
+                            <i class="bi bi-plus-circle mb-1" style="font-size: 20px;"></i>
+                            <span class="text-white">Xem tất cả</span>
+                          </a>
+                        </div>
                       </div>
-                      <?php if (empty($menu_brands)): ?>
-                        <a class="dropdown-item disabled" href="#">Chưa có thương hiệu</a>
-                      <?php endif; ?>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="megamenu-title">Nhu cầu sử dụng</div>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=gaming"><i class="bi bi-circle-fill"></i> Laptop Gaming</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=van+phong"><i class="bi bi-circle-fill"></i> Văn phòng - Học tập</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=do+hoa"><i class="bi bi-circle-fill"></i> Đồ họa - Kỹ thuật</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=mong+nhe"><i class="bi bi-circle-fill"></i> Mỏng nhẹ - Cao cấp</a>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="megamenu-title">Phụ kiện</div>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=chuot"><i class="bi bi-circle-fill"></i> Chuột máy tính</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=ban+phim"><i class="bi bi-circle-fill"></i> Bàn phím</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=balo"><i class="bi bi-circle-fill"></i> Balo - Túi xách</a>
+
+                      <div class="row mt-4">
+                        <div class="col-12">
+                          <div class="alert alert-warning py-2 mb-0 border-0 rounded-3 d-flex align-items-center" style="background: rgba(255,193,7,0.15)">
+                            <i class="bi bi-gift-fill me-2 text-danger"></i>
+                            <span class="small fw-bold">Mua Laptop đón Tết - Nhận Lì Xì tới 2.026.000đ!</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
