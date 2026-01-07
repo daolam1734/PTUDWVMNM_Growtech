@@ -232,8 +232,8 @@ function createOrder($data) {
         $pdo->beginTransaction();
 
         // 1. Insert into orders
-        $stmt = $pdo->prepare("INSERT INTO orders (order_no, user_id, address_id, voucher_id, subtotal, shipping_fee, shipping_discount, discount, discount_amount, total, order_status, payment_method, payment_status, notes, created_at) 
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'dang_cho', ?, 'dang_cho', ?, NOW())");
+        $stmt = $pdo->prepare("INSERT INTO orders (order_no, user_id, address_id, voucher_id, subtotal, shipping_fee, shipping_discount, discount, discount_amount, total, order_status, payment_method, payment_status, shipping_status, notes, created_at) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, 'UNPAID', 'NOT_SHIPPED', ?, NOW())");
         
         $order_no = 'WL-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
         $stmt->execute([
@@ -301,12 +301,12 @@ function cancelOrder($order_id, $user_id) {
         $stmt->execute([$order_id, $user_id]);
         $order = $stmt->fetch();
 
-        if (!$order || $order['order_status'] !== 'dang_cho') {
+        if (!$order || $order['order_status'] !== 'PENDING') {
             throw new Exception("Đơn hàng không thể hủy.");
         }
 
         // 2. Update order status
-        $stmtUpdate = $pdo->prepare("UPDATE orders SET order_status = 'huy' WHERE id = ?");
+        $stmtUpdate = $pdo->prepare("UPDATE orders SET order_status = 'CANCELLED' WHERE id = ?");
         $stmtUpdate->execute([$order_id]);
 
         // 3. Restore stock and record movement
@@ -383,5 +383,81 @@ function slugify($text) {
     $text = strtolower($text);
     if (empty($text)) return 'n-a';
     return $text;
+}
+
+/** Frontend UI Helpers **/
+function get_order_status_badge($status) {
+    $map = [
+        'PENDING'    => ['label' => 'Chờ xử lý',    'class' => 'status-pending'],
+        'CONFIRMED'  => ['label' => 'Đã xác nhận',  'class' => 'status-confirmed'],
+        'PROCESSING' => ['label' => 'Đang xử lý',   'class' => 'status-processing'],
+        'SHIPPING'   => ['label' => 'Đang vận chuyển','class' => 'status-shipping'],
+        'DELIVERED'  => ['label' => 'Đã giao hàng', 'class' => 'status-delivered'],
+        'COMPLETED'  => ['label' => 'Hoàn thành',   'class' => 'status-completed'],
+        'CANCELLED'  => ['label' => 'Đã hàng hủy',  'class' => 'status-cancelled'],
+        'RETURNED'   => ['label' => 'Trả hàng',     'class' => 'status-returned']
+    ];
+    $data = $map[strtoupper($status)] ?? ['label' => $status, 'class' => 'status-default'];
+    return '<span class="status-badge-web ' . $data['class'] . '"><span class="dot"></span>' . $data['label'] . '</span>';
+}
+
+function get_status_label($status) {
+    $map = [
+        'PENDING'    => 'Chờ xử lý',
+        'CONFIRMED'  => 'Đã xác nhận',
+        'PROCESSING' => 'Đang xử lý',
+        'SHIPPING'   => 'Đang vận chuyển',
+        'DELIVERED'  => 'Đã giao hàng',
+        'COMPLETED'  => 'Hoàn thành',
+        'CANCELLED'  => 'Đã hủy',
+        'RETURNED'   => 'Trả hàng'
+    ];
+    return $map[strtoupper($status)] ?? $status;
+}
+
+function get_payment_status_badge($status) {
+    $map = [
+        'UNPAID'   => ['label' => 'Chưa thanh toán', 'class' => 'pay-unpaid'],
+        'PAID'     => ['label' => 'Đã thanh toán',   'class' => 'pay-paid'],
+        'FAILED'   => ['label' => 'Thất bại',        'class' => 'pay-failed'],
+        'REFUNDED' => ['label' => 'Đã hoàn tiền',    'class' => 'pay-refunded']
+    ];
+    $data = $map[strtoupper($status)] ?? ['label' => $status, 'class' => 'pay-default'];
+    return '<span class="status-badge-web ' . $data['class'] . '">' . $data['label'] . '</span>';
+}
+
+/**
+ * Notification Functions
+ */
+function getUserNotifications($user_id, $limit = 20) {
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT " . (int)$limit);
+    $stmt->execute([$user_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function getUnreadNotificationCount($user_id) {
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+    $stmt->execute([$user_id]);
+    return (int)$stmt->fetchColumn();
+}
+
+function markNotificationAsRead($notif_id, $user_id) {
+    global $pdo;
+    $stmt = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?");
+    return $stmt->execute([$notif_id, $user_id]);
+}
+
+function markAllNotificationsAsRead($user_id) {
+    global $pdo;
+    $stmt = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE user_id = ?");
+    return $stmt->execute([$user_id]);
+}
+
+function createNotification($user_id, $title, $content, $type = 'system', $link = null) {
+    global $pdo;
+    $stmt = $pdo->prepare("INSERT INTO notifications (user_id, title, content, type, link) VALUES (?, ?, ?, ?, ?)");
+    return $stmt->execute([$user_id, $title, $content, $type, $link]);
 }
 
