@@ -103,6 +103,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if ($order_id) {
             unset($_SESSION["cart"]);
             unset($_SESSION["voucher"]);
+
+            // Create notification for user
+            createNotification($user_id, "Đặt hàng thành công", "Cảm ơn bạn đã đặt hàng! Đơn hàng #$order_id của bạn đang được xử lý.", "order", "/weblaptop/orders.php");
+
             set_flash("success", "Đặt hàng thành công! Mã đơn hàng của bạn là #" . $order_id);
             header("Location: /weblaptop/orders.php");
             exit;
