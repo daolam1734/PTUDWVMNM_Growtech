@@ -7,6 +7,8 @@ $q = isset($_GET['q']) ? trim($_GET['q']) : '';
 $category_slug = isset($_GET['category']) ? trim($_GET['category']) : '';
 $brand = isset($_GET['brand']) ? trim($_GET['brand']) : '';
 $price_range = isset($_GET['price']) ? trim($_GET['price']) : '';
+$price_min = isset($_GET['price_min']) ? trim($_GET['price_min']) : '';
+$price_max = isset($_GET['price_max']) ? trim($_GET['price_max']) : '';
 $cpu_filter = isset($_GET['cpu']) ? trim($_GET['cpu']) : '';
 $ram_filter = isset($_GET['ram']) ? trim($_GET['ram']) : '';
 $storage_filter = isset($_GET['storage']) ? trim($_GET['storage']) : '';
@@ -51,6 +53,16 @@ if ($price_range !== '') {
             $params[] = $max;
         }
     }
+}
+
+// Custom Price Range (from inputs)
+if ($price_min !== '') {
+    $where[] = "p.price >= ?";
+    $params[] = (float)$price_min;
+}
+if ($price_max !== '') {
+    $where[] = "p.price <= ?";
+    $params[] = (float)$price_max;
 }
 
 // Spec Filters (using LIKE for flexibility)

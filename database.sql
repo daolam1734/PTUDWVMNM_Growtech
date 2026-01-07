@@ -249,11 +249,18 @@ CREATE TABLE IF NOT EXISTS `reviews` (
 -- Sample / Seed Data
 -- --------------------------------------------------
 
--- Categories
+-- Categories (Professional list)
 INSERT IGNORE INTO `categories` (`name`,`slug`,`description`) VALUES
-('Mỏng nhẹ','mong-nhe','Laptop mỏng nhẹ, dễ mang theo'),
-('Chơi game','choi-game','Laptop hiệu suất cao dành cho chơi game'),
-('Văn phòng','van-phong','Laptop cho nhu cầu văn phòng và học tập');
+('Học tập','hoc-tap','Laptop dành cho học sinh, sinh viên'),
+('Văn phòng','van-phong','Laptop cho công việc văn phòng'),
+('Doanh nhân','doanh-nhan','Laptop sang trọng dành cho doanh nhân'),
+('Thiết kế đồ họa','thiet-ke-do-hoa','Laptop cấu hình mạnh cho thiết kế và đồ họa'),
+('Lập trình','lap-trinh','Laptop dành cho các nhà phát triển phần mềm'),
+('Chơi game','choi-game','Laptop hiệu suất cao cho game thủ'),
+('Kỹ thuật','ky-thuat','Laptop chuyên dụng cho kỹ thuật và CAD'),
+('Phân tích dữ liệu','phan-tich-du-lieu','Laptop hiệu suất cao cho phân tích dữ liệu'),
+('Sáng tạo nội dung','sang-tao-noi-dung','Laptop hiệu năng cao cho dựng phim, chỉnh sửa ảnh'),
+('Nhu cầu cơ bản','nhu-cau-co-ban','Laptop cho nhu cầu giải trí và công việc cơ bản');
 
 -- Brands
 INSERT IGNORE INTO `brands` (`name`,`logo`) VALUES
@@ -263,12 +270,13 @@ INSERT IGNORE INTO `brands` (`name`,`logo`) VALUES
 -- Products (idempotent using unique sku)
 INSERT IGNORE INTO `products` (`sku`,`name`,`slug`,`brand_id`,`category_id`,`short_description`,`description`,`price`,`stock`,`is_active`)
 VALUES
-('ULTRA-001','Alpha Mỏng Nhẹ','alpha-mong-nhe',
-  (SELECT id FROM categories WHERE name='Mỏng nhẹ'),
+('ULTRA-001','Alpha Mỏng Nhẹ','alpha-mong-nhe', NULL,
+  (SELECT id FROM categories WHERE name='Nhu cầu cơ bản'),
   '13.3" FHD, Intel Core i5, 8GB RAM, 256GB SSD','Mô tả chi tiết Alpha Mỏng Nhẹ',799.00,10,1),
-('GAME-002','Quái Vật Chơi Game',' Quai-vat-choi-game',
+('GAME-002','Quái Vật Chơi Game','quai-vat-choi-game', NULL,
   (SELECT id FROM categories WHERE name='Chơi game'),
   '15.6" 144Hz, Intel Core i7, 16GB RAM, RTX 3060, 512GB SSD','Mô tả chi tiết Quái Vật Chơi Game',1299.00,5,1),
+('OFFICE-003','Văn Phòng Pro','van-phong-pro', NULL,
   (SELECT id FROM categories WHERE name='Văn phòng'),
   '14" HD, AMD Ryzen 5, 8GB RAM, 256GB SSD','Mô tả chi tiết Văn Phòng Pro',599.00,15,1);
 
@@ -513,27 +521,22 @@ INSERT IGNORE INTO `brands` (`name`,`logo`,`created_at`) VALUES
 ('Asus','', '2023-12-01 15:00:00'),
 ('Lenovo','', '2023-12-03 11:00:00'),
 ('HP','', '2023-12-04 10:00:00'),
-  ('Acer','', '2023-12-06 10:00:00');
--- Categories bổ sung
-INSERT IGNORE INTO `categories` (`name`,`slug`,`description`,`created_at`) VALUES
-('Laptop Văn Phòng','laptop-van-phong','Laptop dành cho công việc văn phòng', '2023-12-01 08:00:00'),
-('Laptop Gaming','laptop-gaming','Laptop hiệu suất cao cho chơi game', '2023-12-01 08:00:00'),
-('Laptop Doanh Nhân','laptop-doanh-nhan','Laptop dành cho doanh nhân', '2023-12-02 08:00:00'),
-('Laptop Học Tập','laptop-hoc-tap','Laptop phù hợp cho học sinh, sinh viên', '2023-12-03 08:00:00'),
-('Laptop Cao Cấp','laptop-cao-cap','Laptop cao cấp cho người dùng chuyên nghiệp', '2023-12-03 09:00:00'),
-('Laptop 2 trong 1','laptop-2-trong-1','Laptop 2-in-1 có màn hình cảm ứng', '2023-12-04 08:00:00');
+  ('Acer','', '2023-12-06 10:00:00'),
+  ('Microsoft','', '2023-12-07 10:00:00');
 
 -- Sản phẩm mẫu (idempotent bằng sku)
 INSERT IGNORE INTO `products` (`sku`,`name`,`slug`,`brand_id`,`category_id`,`short_description`,`description`,`price`,`sale_price`,`stock`,`is_active`,`created_at`,`updated_at`)
 VALUES
-('DELLXPS13','Dell XPS 13 9310','dell-xps-13-9310', (SELECT id FROM brands WHERE name='Dell'), (SELECT id FROM categories WHERE name='Laptop Văn Phòng'), 'Laptop mỏng, nhẹ, hiệu suất cao','Màn hình 13.4-inch, Intel Core i7, RAM 16GB, SSD 512GB. Thiết kế sang trọng, hiệu suất mạnh mẽ cho công việc văn phòng và giải trí.', 28999000.00, 25999000.00, 50, 1, '2023-12-01 10:00:00','2023-12-01 10:00:00'),
-('MACBOOKAIR2022','MacBook Air M2 (2022)','macbook-air-m2-2022', (SELECT id FROM brands WHERE name='Apple'), (SELECT id FROM categories WHERE name='Laptop Văn Phòng'), 'Mỏng nhẹ, hiệu năng mạnh với chip M2','Màn hình 13.6-inch Retina, chip Apple M2, RAM 8GB, SSD 256GB. Thích hợp cho công việc sáng tạo và sử dụng hàng ngày.', 32990000.00, 30990000.00, 30, 1, '2023-12-02 09:00:00','2023-12-02 09:00:00'),
-('ASUSROG14','Asus ROG Zephyrus G14 (2023)','asus-rog-zephyrus-g14-2023', (SELECT id FROM brands WHERE name='Asus'), (SELECT id FROM categories WHERE name='Laptop Gaming'), 'Laptop gaming siêu mạnh, thiết kế mỏng','AMD Ryzen 9 6900HS, RAM 32GB, SSD 1TB, GPU NVIDIA RTX 3060. Màn hình 14-inch 120Hz, thiết kế siêu mỏng và mạnh mẽ.', 44990000.00, NULL, 20, 1, '2023-12-01 15:00:00','2023-12-01 15:00:00'),
-('THINKPADX1','Lenovo ThinkPad X1 Carbon Gen 9','lenovo-thinkpad-x1-carbon-gen-9', (SELECT id FROM brands WHERE name='Lenovo'), (SELECT id FROM categories WHERE name='Laptop Doanh Nhân'), 'Laptop doanh nhân bền bỉ, hiệu suất cao','Intel Core i7, RAM 16GB, SSD 512GB, Màn hình 14-inch 4K UHD, thiết kế bền bỉ, trọng lượng nhẹ.', 39000000.00, NULL, 40, 1, '2023-12-03 11:00:00','2023-12-03 11:00:00'),
-('DELLINSPIRON15','Dell Inspiron 15 5000','dell-inspiron-15-5000', (SELECT id FROM brands WHERE name='Dell'), (SELECT id FROM categories WHERE name='Laptop Học Tập'), 'Laptop giá rẻ, phù hợp cho học sinh, sinh viên','Intel Core i5-1135G7, RAM 8GB, SSD 512GB. Màn hình 15.6-inch Full HD, máy tính xách tay giá rẻ, đủ mạnh cho các tác vụ học tập cơ bản.', 15990000.00, NULL, 100, 1, '2023-12-03 14:00:00','2023-12-03 14:00:00'),
-('PAVILIONX360','HP Pavilion x360 14','hp-pavilion-x360-14', (SELECT id FROM brands WHERE name='HP'), (SELECT id FROM categories WHERE name='Laptop 2 trong 1'), 'Laptop 2 trong 1, màn hình cảm ứng','Intel Core i5, RAM 8GB, SSD 512GB. Màn hình 14-inch cảm ứng, thiết kế linh hoạt có thể xoay 360 độ.', 22500000.00, 20000000.00, 60, 1, '2023-12-04 10:00:00','2023-12-04 10:00:00'), (SELECT id FROM categories WHERE name='Laptop Gaming'), 'Laptop gaming mạnh mẽ, thiết kế mỏng','Intel Core i7-12800H, RAM 16GB, SSD 1TB, GPU NVIDIA RTX 3070 Ti. Màn hình 15.6-inch Full HD 165Hz.', 52000000.00, 49500000.00, 10, 1, '2023-12-05 09:00:00','2023-12-05 09:00:00'),
-('PREDATORHELIOS','Acer Predator Helios 300','acer-predator-helios-300', (SELECT id FROM brands WHERE name='Acer'), (SELECT id FROM categories WHERE name='Laptop Gaming'), 'Laptop gaming với hiệu năng vượt trội','Intel Core i7-11800H, RAM 16GB, SSD 512GB, GPU NVIDIA RTX 3060. Màn hình 15.6-inch Full HD 144Hz.', 35500000.00, 32000000.00, 15, 1, '2023-12-06 10:00:00','2023-12-06 10:00:00'),
-('XPS15','Dell XPS 15 9500','dell-xps-15-9500', (SELECT id FROM brands WHERE name='Dell'), (SELECT id FROM categories WHERE name='Laptop Cao Cấp'), 'Laptop cao cấp, màn hình 15.6-inch','Intel Core i7-10750H, RAM 16GB, SSD 512GB. Màn hình 15.6-inch 4K OLED, thiết kế tuyệt đẹp và hiệu suất mạnh mẽ.', 49000000.00, 45000000.00, 25, 1, '2023-12-07 10:00:00','2023-12-07 10:00:00'); (SELECT id FROM categories WHERE name='Laptop Cao Cấp'), 'Laptop cao cấp, màn hình 15.6-inch','Intel Core i7-10750H, RAM 16GB, SSD 512GB. Màn hình 15.6-inch 4K OLED, thiết kế tuyệt đẹp và hiệu suất mạnh mẽ.', 49000000.00, 45000000.00, 25, 1, '2023-12-07 10:00:00','2023-12-07 10:00:00'); (SELECT id FROM categories WHERE name='Laptop Cao Cấp'), 'Laptop cao cấp, màn hình 15.6-inch','Intel Core i7-10750H, RAM 16GB, SSD 512GB. Màn hình 15.6-inch 4K OLED, thiết kế tuyệt đẹp và hiệu suất mạnh mẽ.', 49000000.00, 45000000.00, 25, 1, '2023-12-07 10:00:00','2023-12-07 10:00:00'), (SELECT id FROM categories WHERE name='Laptop Văn Phòng'), 'Laptop mỏng nhẹ, màn hình 15-inch','Intel Core i7-1185G7, RAM 16GB, SSD 512GB. Màn hình 15-inch PixelSense, thiết kế mỏng nhẹ, dành cho công việc văn phòng và giải trí.', 29990000.00, NULL, 30, 1, '2023-12-07 15:00:00','2023-12-07 15:00:00');
+('DELLXPS13','Dell XPS 13 9310','dell-xps-13-9310', (SELECT id FROM brands WHERE name='Dell'), (SELECT id FROM categories WHERE name='Văn phòng'), 'Laptop mỏng, nhẹ, hiệu suất cao','Màn hình 13.4-inch, Intel Core i7, RAM 16GB, SSD 512GB. Thiết kế sang trọng, hiệu suất mạnh mẽ cho công việc văn phòng và giải trí.', 28999000.00, 25999000.00, 50, 1, '2023-12-01 10:00:00','2023-12-01 10:00:00'),
+('MACBOOKAIR2022','MacBook Air M2 (2022)','macbook-air-m2-2022', (SELECT id FROM brands WHERE name='Apple'), (SELECT id FROM categories WHERE name='Văn phòng'), 'Mỏng nhẹ, hiệu năng mạnh với chip M2','Màn hình 13.6-inch Retina, chip Apple M2, RAM 8GB, SSD 256GB. Thích hợp cho công việc sáng tạo và sử dụng hàng ngày.', 32990000.00, 30990000.00, 30, 1, '2023-12-02 09:00:00','2023-12-02 09:00:00'),
+('ASUSROG14','Asus ROG Zephyrus G14 (2023)','asus-rog-zephyrus-g14-2023', (SELECT id FROM brands WHERE name='Asus'), (SELECT id FROM categories WHERE name='Chơi game'), 'Laptop gaming siêu mạnh, thiết kế mỏng','AMD Ryzen 9 6900HS, RAM 32GB, SSD 1TB, GPU NVIDIA RTX 3060. Màn hình 14-inch 120Hz, thiết kế siêu mỏng và mạnh mẽ.', 44990000.00, NULL, 20, 1, '2023-12-01 15:00:00','2023-12-01 15:00:00'),
+('THINKPADX1','Lenovo ThinkPad X1 Carbon Gen 9','lenovo-thinkpad-x1-carbon-gen-9', (SELECT id FROM brands WHERE name='Lenovo'), (SELECT id FROM categories WHERE name='Doanh nhân'), 'Laptop doanh nhân bền bỉ, hiệu suất cao','Intel Core i7, RAM 16GB, SSD 512GB, Màn hình 14-inch 4K UHD, thiết kế bền bỉ, trọng lượng nhẹ.', 39000000.00, NULL, 40, 1, '2023-12-03 11:00:00','2023-12-03 11:00:00'),
+('DELLINSPIRON15','Dell Inspiron 15 5000','dell-inspiron-15-5000', (SELECT id FROM brands WHERE name='Dell'), (SELECT id FROM categories WHERE name='Học tập'), 'Laptop giá rẻ, phù hợp cho học sinh, sinh viên','Intel Core i5-1135G7, RAM 8GB, SSD 512GB. Màn hình 15.6-inch Full HD, máy tính xách tay giá rẻ, đủ mạnh cho các tác vụ học tập cơ bản.', 15990000.00, NULL, 100, 1, '2023-12-03 14:00:00','2023-12-03 14:00:00'),
+('PAVILIONX360','HP Pavilion x360 14','hp-pavilion-x360-14', (SELECT id FROM brands WHERE name='HP'), (SELECT id FROM categories WHERE name='Nhu cầu cơ bản'), 'Laptop 2 trong 1, màn hình cảm ứng','Intel Core i5, RAM 8GB, SSD 512GB. Màn hình 14-inch cảm ứng, thiết kế linh hoạt có thể xoay 360 độ.', 22500000.00, 20000000.00, 60, 1, '2023-12-04 10:00:00','2023-12-04 10:00:00'),
+('GAME-HIGH','Laptop Gaming High-end','laptop-gaming-high-end', (SELECT id FROM brands WHERE name='Asus'), (SELECT id FROM categories WHERE name='Chơi game'), 'Laptop gaming mạnh mẽ, thiết kế mỏng','Intel Core i7-12800H, RAM 16GB, SSD 1TB, GPU NVIDIA RTX 3070 Ti. Màn hình 15.6-inch Full HD 165Hz.', 52000000.00, 49500000.00, 10, 1, '2023-12-05 09:00:00','2023-12-05 09:00:00'),
+('PREDATORHELIOS','Acer Predator Helios 300','acer-predator-helios-300', (SELECT id FROM brands WHERE name='Acer'), (SELECT id FROM categories WHERE name='Chơi game'), 'Laptop gaming với hiệu năng vượt trội','Intel Core i7-11800H, RAM 16GB, SSD 512GB, GPU NVIDIA RTX 3060. Màn hình 15.6-inch Full HD 144Hz.', 35500000.00, 32000000.00, 15, 1, '2023-12-06 10:00:00','2023-12-06 10:00:00'),
+('XPS15','Dell XPS 15 9500','dell-xps-15-9500', (SELECT id FROM brands WHERE name='Dell'), (SELECT id FROM categories WHERE name='Doanh nhân'), 'Laptop cao cấp, màn hình 15.6-inch','Intel Core i7-10750H, RAM 16GB, SSD 512GB. Màn hình 15.6-inch 4K OLED, thiết kế tuyệt đẹp và hiệu suất mạnh mẽ.', 49000000.00, 45000000.00, 25, 1, '2023-12-07 10:00:00','2023-12-07 10:00:00'),
+('SURFACE5','Microsoft Surface Laptop 5','microsoft-surface-laptop-5', (SELECT id FROM brands WHERE name='Microsoft'), (SELECT id FROM categories WHERE name='Văn phòng'), 'Laptop mỏng nhẹ, màn hình 15-inch','Intel Core i7-1185G7, RAM 16GB, SSD 512GB. Màn hình 15-inch PixelSense, thiết kế mỏng nhẹ, dành cho công việc văn phòng và giải trí.', 29990000.00, NULL, 30, 1, '2023-12-07 15:00:00','2023-12-07 15:00:00');
 
 -- Thông số kỹ thuật mẫu (product_specifications)
 

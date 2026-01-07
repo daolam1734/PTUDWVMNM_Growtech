@@ -9,6 +9,10 @@ $stmt_menu_brands = $pdo->prepare("SELECT * FROM brands WHERE name IN ($placehol
 $stmt_execute_params = array_merge($allowed_brands, $allowed_brands);
 $stmt_menu_brands->execute($stmt_execute_params);
 $menu_brands = $stmt_menu_brands->fetchAll();
+
+// Fetch all categories for menu
+$stmt_menu_cats = $pdo->query("SELECT * FROM categories ORDER BY name ASC");
+$menu_categories = $stmt_menu_cats->fetchAll();
 ?>
 <!doctype html>
 <html lang="vi">
@@ -22,10 +26,11 @@ $menu_brands = $stmt_menu_brands->fetchAll();
   <style>
     body { margin: 0 !important; padding: 0 !important; }
     :root { 
-      --tet-red: #d32f2f; 
-      --tet-gold: #ffc107;
-      --tet-dark-red: #a51d1d;
-      --tet-light-gold: #ffecb3;
+      --tet-red: #C62222; 
+      --tet-gold: #D4AF37;
+      --tet-dark-red: #8B0000;
+      --tet-light-gold: #F9E79F;
+      --tet-soft-bg: #FEF9E7;
     }
     .tet-header { 
       background: linear-gradient(135deg, #c62828, #8e0000); 
@@ -237,10 +242,203 @@ $menu_brands = $stmt_menu_brands->fetchAll();
       color: var(--tet-gold) !important;
     }
     
+    /* Better Megamenu styling */
+    .nav-item.dropdown.megamenu-parent {
+      position: static !important;
+    }
+    .megamenu-parent .dropdown-menu {
+      width: 90vw;
+      max-width: 1000px;
+      left: 50% !important;
+      right: auto !important;
+      transform: translateX(-50%) translateY(20px) !important;
+      padding: 30px;
+      border: none;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      border-top: 5px solid var(--tet-gold);
+      opacity: 0;
+      visibility: hidden;
+      display: block;
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+    .megamenu-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--tet-red);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      letter-spacing: 0.5px;
+    }
+    .megamenu-title::after {
+      content: "";
+      flex: 1;
+      height: 2px;
+      background: #eee;
+      margin-left: 15px;
+    }
+    .megamenu-link {
+      color: #333 !important;
+      font-weight: 600;
+      padding: 10px 15px !important;
+      border-radius: 10px;
+      transition: all 0.2s;
+      background: #fdfdfd;
+      border: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 14px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    }
+    .megamenu-link:hover {
+      background: var(--tet-soft-bg);
+      color: var(--tet-red) !important;
+      border-color: var(--tet-gold);
+      transform: translateX(8px);
+    }
+    .megamenu-link i {
+      font-size: 18px;
+      margin-right: 12px;
+      color: var(--tet-red);
+      background: #fff;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .megamenu-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #999;
+      text-transform: uppercase;
+      margin: 15px 0 10px 5px;
+      display: block;
+      letter-spacing: 1px;
+    }
+    .megamenu-group-title:first-child {
+      margin-top: 0;
+    }
+    .megamenu-brand-item {
+      text-align: center;
+      padding: 20px 15px;
+      border: 1px solid #f0f0f0;
+      border-radius: 12px;
+      transition: all 0.3s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      height: 100%;
+      background: #fff;
+    }
+    .megamenu-brand-item:hover {
+      border-color: var(--tet-red);
+      box-shadow: 0 10px 20px rgba(211, 47, 47, 0.08);
+      transform: translateY(-5px);
+    }
+    .megamenu-brand-item img {
+      width: 100%;
+      max-width: 80px;
+      height: 40px;
+      object-fit: contain;
+      margin-bottom: 12px;
+      filter: grayscale(1);
+      opacity: 0.6;
+      transition: all 0.3s;
+    }
+    .megamenu-brand-item:hover img {
+      filter: grayscale(0);
+      opacity: 1;
+    }
+    .megamenu-brand-item span {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #666;
+      transition: color 0.3s;
+    }
+    .megamenu-brand-item:hover span {
+      color: var(--tet-red);
+    }
+    .megamenu-promo-banner {
+      background: linear-gradient(135deg, var(--tet-red), #e53935);
+      border-radius: 15px;
+      padding: 25px;
+      color: #fff;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .megamenu-promo-banner::before {
+      content: '🧧';
+      position: absolute;
+      right: -10px;
+      bottom: -10px;
+      font-size: 80px;
+      opacity: 0.2;
+      transform: rotate(-15deg);
+    }
+    .megamenu-promo-banner h4 {
+      font-weight: 800;
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      color: var(--tet-gold);
+    }
+    .megamenu-promo-banner p {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 15px;
+    }
+    .megamenu-promo-banner .btn {
+      align-self: flex-start;
+      background: var(--tet-gold);
+      color: var(--tet-red);
+      font-weight: 700;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 50px;
+    }
+    
+    .megamenu-parent:hover .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0) !important;
+    }
+    .tet-badge {
+      background: var(--tet-red);
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 5px;
+      vertical-align: middle;
+    }
+    
     /* Show dropdown on hover for desktop */
     @media (min-width: 992px) {
       .nav-item.dropdown:hover > .dropdown-menu {
         display: block;
+        opacity: 1;
+        visibility: visible;
+        margin-top: 0;
+      }
+      .nav-item.dropdown > .dropdown-menu {
+        display: block;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        margin-top: 20px;
       }
       .nav-item.dropdown:hover > .nav-link {
         color: var(--tet-gold) !important;
@@ -248,70 +446,6 @@ $menu_brands = $stmt_menu_brands->fetchAll();
       .nav-item.dropdown:hover > .nav-link::after {
         width: 30px;
       }
-    }
-
-    .megamenu { position: static !important; }
-    .megamenu .dropdown-menu {
-      width: 100%;
-      left: 0;
-      right: 0;
-      top: 100%;
-      border-radius: 0 0 20px 20px;
-      border: none;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-      padding: 30px 0;
-      background: #fff;
-      margin-top: 0;
-      border-top: 4px solid var(--tet-gold);
-      animation: slideUp 0.3s ease-out;
-    }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .megamenu-title {
-      color: var(--tet-red);
-      font-weight: 800;
-      font-size: 16px;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #f8f9fa;
-      display: block;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      position: relative;
-    }
-    .megamenu-title::after {
-      content: '';
-      position: absolute;
-      bottom: -2px;
-      left: 0;
-      width: 50px;
-      height: 2px;
-      background: var(--tet-gold);
-    }
-    .megamenu .dropdown-item {
-      padding: 10px 0;
-      font-size: 14px;
-      color: #555 !important;
-      transition: all 0.3s;
-      background: transparent !important;
-      display: flex;
-      align-items: center;
-    }
-    .megamenu .dropdown-item i {
-      font-size: 8px;
-      margin-right: 10px;
-      color: var(--tet-gold);
-      opacity: 0;
-      transition: all 0.3s;
-    }
-    .megamenu .dropdown-item:hover {
-      color: var(--tet-red) !important;
-      padding-left: 15px;
-    }
-    .megamenu .dropdown-item:hover i {
-      opacity: 1;
     }
 
     /* General Dropdown Styling */
@@ -373,12 +507,48 @@ $menu_brands = $stmt_menu_brands->fetchAll();
       animation: pulse-gold 2s infinite ease-in-out;
     }
 
+    @media (max-width: 991px) {
+      .megamenu-parent .dropdown-menu {
+        width: 100% !important;
+        transform: none !important;
+        position: static !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: none;
+      }
+      .megamenu-parent.show .dropdown-menu {
+        display: block;
+      }
+      .megamenu-inner {
+        flex-direction: column;
+      }
+      .megamenu-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #eee;
+        padding: 10px 0;
+      }
+      .megamenu-content {
+        padding: 20px;
+      }
+      .megamenu-brand-item img {
+        max-width: 60px;
+      }
+      .main-menu-nav {
+        background: var(--tet-red);
+        border-radius: 0;
+      }
+    }
+
     /* Tet Footer Styling */
     .tet-footer {
-      background: linear-gradient(135deg, #8e0000, #c62828);
+      background: linear-gradient(135deg, var(--tet-dark-red), var(--tet-red));
       background-image: 
         url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"), 
-        linear-gradient(135deg, #8e0000, #c62828);
+        linear-gradient(135deg, var(--tet-dark-red), var(--tet-red));
       color: #fff;
       border-top: 5px solid var(--tet-gold);
       position: relative;
@@ -604,43 +774,71 @@ $menu_brands = $stmt_menu_brands->fetchAll();
               <a class="nav-link" href="/weblaptop/index.php"><i class="bi bi-house-door me-1"></i> Trang chủ</a>
             </li>
             
-            <li class="nav-item dropdown megamenu">
+            <li class="nav-item dropdown megamenu-parent">
               <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Sản phẩm</a>
               <div class="dropdown-menu">
-                <div class="container">
-                  <div class="row">
-                    <div class="col-md-4">
-                      <div class="megamenu-title">Thương hiệu</div>
-                      <div class="row g-2">
-                        <?php foreach ($menu_brands as $b): ?>
-                          <div class="col-6">
-                            <a class="dropdown-item p-2 d-flex align-items-center border rounded-3 mb-1" href="/weblaptop/search.php?brand=<?php echo urlencode($b['name']); ?>" style="background: #f8f9fa !important;">
-                              <?php if ($b['logo']): ?>
-                                <img src="<?php echo htmlspecialchars($b['logo']); ?>" alt="<?php echo htmlspecialchars($b['name']); ?>" style="width: 24px; height: 24px; object-fit: contain; margin-right: 8px;">
-                              <?php else: ?>
-                                <i class="bi bi-tag me-2" style="font-size: 14px; color: var(--tet-red);"></i>
-                              <?php endif; ?>
-                              <span class="small fw-bold"><?php echo htmlspecialchars($b['name']); ?></span>
-                            </a>
-                          </div>
-                        <?php endforeach; ?>
+                <div class="row">
+                  <!-- Categories Column -->
+                  <div class="col-md-5 border-end">
+                    <div class="megamenu-title">Theo nhu cầu</div>
+                    <div class="row">
+                      <?php 
+                      $ui_groups = [
+                        'Tiêu điểm' => ['choi-game', 'van-phong'],
+                        'Chuyên nghiệp' => ['doanh-nhan', 'lap-trinh'],
+                        'Sáng tạo & Khác' => ['thiet-ke-do-hoa', 'hoc-tap']
+                      ];
+
+                      $icon_map = [
+                        'hoc-tap' => 'bi-mortarboard',
+                        'van-phong' => 'bi-building',
+                        'doanh-nhan' => 'bi-briefcase',
+                        'thiet-ke-do-hoa' => 'bi-palette',
+                        'lap-trinh' => 'bi-code-slash',
+                        'choi-game' => 'bi-controller'
+                      ];
+
+                      echo '<div class="col-6">';
+                      $count = 0;
+                      foreach ($ui_groups as $group_name => $slugs) {
+                        if ($count == 2) echo '</div><div class="col-6">';
+                        echo '<span class="megamenu-group-title">' . $group_name . '</span>';
+                        foreach ($slugs as $slug) {
+                          foreach ($menu_categories as $cat) {
+                            if ($cat['slug'] === $slug) {
+                              $icon = $icon_map[$slug] ?? 'bi-tag';
+                              echo '<a href="/weblaptop/search.php?category='.$slug.'" class="megamenu-link">
+                                      <i class="bi '.$icon.'"></i> '.htmlspecialchars($cat['name']).'
+                                    </a>';
+                            }
+                          }
+                        }
+                        $count++;
+                      }
+                      ?>
                       </div>
-                      <?php if (empty($menu_brands)): ?>
-                        <a class="dropdown-item disabled" href="#">Chưa có thương hiệu</a>
-                      <?php endif; ?>
                     </div>
-                    <div class="col-md-4">
-                      <div class="megamenu-title">Nhu cầu sử dụng</div>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=gaming"><i class="bi bi-circle-fill"></i> Laptop Gaming</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=van+phong"><i class="bi bi-circle-fill"></i> Văn phòng - Học tập</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=do+hoa"><i class="bi bi-circle-fill"></i> Đồ họa - Kỹ thuật</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=mong+nhe"><i class="bi bi-circle-fill"></i> Mỏng nhẹ - Cao cấp</a>
+                    <div class="mt-3 p-3 rounded-4 text-center" style="background: var(--tet-soft-bg); border: 1px dashed var(--tet-gold);">
+                      <a href="/weblaptop/search.php" class="small text-danger fw-bold text-decoration-none">Xem tất cả danh mục <i class="bi bi-arrow-right"></i></a>
                     </div>
-                    <div class="col-md-4">
-                      <div class="megamenu-title">Phụ kiện</div>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=chuot"><i class="bi bi-circle-fill"></i> Chuột máy tính</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=ban+phim"><i class="bi bi-circle-fill"></i> Bàn phím</a>
-                      <a class="dropdown-item" href="/weblaptop/index.php?q=balo"><i class="bi bi-circle-fill"></i> Balo - Túi xách</a>
+                  </div>
+
+                  <!-- Brands Column -->
+                  <div class="col-md-7">
+                    <div class="megamenu-title">Thương hiệu chính hãng</div>
+                    <div class="row g-3">
+                      <?php foreach ($menu_brands as $b): ?>
+                        <div class="col-4">
+                          <a class="megamenu-brand-item" href="/weblaptop/search.php?brand=<?php echo urlencode($b['name']); ?>">
+                            <?php if ($b['logo']): ?>
+                              <img src="<?php echo htmlspecialchars($b['logo']); ?>" alt="<?php echo htmlspecialchars($b['name']); ?>">
+                            <?php else: ?>
+                              <div class="mb-2" style="color: var(--tet-red);"><i class="bi bi-tag-fill" style="font-size: 24px;"></i></div>
+                            <?php endif; ?>
+                            <span><?php echo htmlspecialchars($b['name']); ?></span>
+                          </a>
+                        </div>
+                      <?php endforeach; ?>
                     </div>
                   </div>
                 </div>
