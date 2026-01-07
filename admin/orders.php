@@ -91,16 +91,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['s
 
 // Filter by status if provided
 $status_filter = $_GET['status'] ?? 'all';
+$search_q = $_GET['q'] ?? '';
+$payment_filter = $_GET['payment'] ?? '';
+
 $query = "
     SELECT o.*, u.full_name as customer_name, ua.phone as customer_phone, v.code as voucher_code
     FROM orders o 
     LEFT JOIN users u ON o.user_id = u.id 
     LEFT JOIN user_addresses ua ON o.address_id = ua.id
     LEFT JOIN vouchers v ON o.voucher_id = v.id
+    WHERE 1=1
 ";
+
 if ($status_filter !== 'all') {
-    $query .= " WHERE o.order_status = " . $pdo->quote($status_filter);
+    $query .= " AND o.order_status = " . $pdo->quote($status_filter);
 }
+
+if (!empty($search_q)) {
+    $search_q_quoted = $pdo->quote("%$search_q%");
+    $query .= " AND (o.order_no LIKE $search_q_quoted OR u.full_name LIKE $search_q_quoted OR ua.phone LIKE $search_q_quoted)";
+}
+
+if (!empty($payment_filter)) {
+    $query .= " AND o.payment_method = " . $pdo->quote($payment_filter);
+}
+
 $query .= " ORDER BY o.created_at DESC";
 $orders = $pdo->query($query)->fetchAll();
 
@@ -226,6 +241,14 @@ require_once __DIR__ . '/includes/header.php';
         transform: translateY(-2px);
     }
 
+    .no-caret::after { display: none !important; }
+    
+    .table-responsive { 
+        overflow: visible !important; 
+        padding-bottom: 60px; /* Thêm không gian cho dropdown tại dòng cuối */
+        margin-bottom: -60px;
+    }
+
     .search-input-group {
         background: #fff;
         border: 1px solid #e2e8f0;
@@ -249,9 +272,9 @@ require_once __DIR__ . '/includes/header.php';
                 <p class="text-muted small mb-0">Theo dõi và cập nhật trạng thái đơn hàng của hệ thống GrowTech.</p>
             </div>
             <div class="d-flex gap-2">
-                <button class="btn btn-white border border-secondary border-opacity-10 shadow-sm px-4 rounded-pill fw-bold btn-sm">
+                <a href="export.php?type=orders" class="btn btn-white border border-secondary border-opacity-10 shadow-sm px-4 rounded-pill fw-bold btn-sm">
                     <i class="bi bi-file-earmark-excel me-2"></i> Xuất Báo Cáo
-                </button>
+                </a>
             </div>
         </div>
 
@@ -267,30 +290,18 @@ require_once __DIR__ . '/includes/header.php';
                 <a href="orders.php?status=CANCELLED" class="order-tab <?php echo $status_filter === 'CANCELLED' ? 'active' : ''; ?>">Đã hủy</a>
             </div>
 
-            <!-- Enhanced Search & Filter -->
             <div class="p-4 bg-light bg-opacity-30 border-bottom border-secondary border-opacity-10">
-                <form class="row g-3 align-items-center">
-                    <div class="col-lg-6 col-md-5">
-                        <div class="input-group search-input-group shadow-none">
-                            <span class="input-group-text bg-transparent border-0"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" class="form-control border-0 shadow-none bg-transparent" placeholder="Tìm kiếm theo mã đơn, khách hàng hoặc SĐT...">
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4">
-                        <select class="form-select border-0 shadow-sm rounded-pill px-4">
-                            <option value="">Tất cả phương thức thanh toán</option>
-                            <option value="cod">Thanh toán khi nhận hàng (COD)</option>
-                            <option value="vnpay">VNPAY Online</option>
-                        </select>
-                    </div>
-                    <div class="col-lg-2 col-md-3">
-                        <button type="submit" class="btn btn-dark w-100 rounded-pill fw-bold h-100 py-2">Áp dụng</button>
+                <form method="GET">
+                    <div class="input-group search-input-group shadow-none">
+                        <span class="input-group-text bg-transparent border-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="order-search" name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" class="form-control border-0 shadow-none bg-transparent" placeholder="Tìm kiếm theo mã đơn, khách hàng hoặc SĐT...">
+                        <input type="hidden" name="status" value="<?php echo htmlspecialchars($status_filter); ?>">
                     </div>
                 </form>
             </div>
 
             <div class="table-responsive">
-                <table class="table table-modern align-middle mb-0">
+                <table id="order-table" class="table table-modern align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-4">Mã đơn</th>
@@ -374,33 +385,49 @@ require_once __DIR__ . '/includes/header.php';
                                             
                                             switch($current) {
                                                 case 'PENDING':
-                                                    $next_options = ['CONFIRMED' => 'Xác nhận đơn', 'CANCELLED' => 'Hủy đơn'];
+                                                    $next_options = [
+                                                        'CONFIRMED' => ['Xác nhận đơn', 'bi-check-circle'],
+                                                        'CANCELLED' => ['Hủy đơn', 'bi-x-circle']
+                                                    ];
                                                     break;
                                                 case 'CONFIRMED':
-                                                    $next_options = ['PROCESSING' => 'Đóng gói/Xử lý', 'CANCELLED' => 'Hủy đơn'];
+                                                    $next_options = [
+                                                        'PROCESSING' => ['Đóng gói/Xử lý', 'bi-box-seam'],
+                                                        'CANCELLED' => ['Hủy đơn', 'bi-x-circle']
+                                                    ];
                                                     break;
                                                 case 'PROCESSING':
-                                                    $next_options = ['SHIPPING' => 'Giao đơn vị vận chuyển', 'CANCELLED' => 'Hủy đơn'];
+                                                    $next_options = [
+                                                        'SHIPPING' => ['Giao đơn vị vận chuyển', 'bi-truck'],
+                                                        'CANCELLED' => ['Hủy đơn', 'bi-x-circle']
+                                                    ];
                                                     break;
                                                 case 'SHIPPING':
-                                                    $next_options = ['DELIVERED' => 'Đã giao hàng', 'CANCELLED' => 'Hủy đơn'];
+                                                    $next_options = [
+                                                        'DELIVERED' => ['Đã giao hàng', 'bi-house-check'],
+                                                        'CANCELLED' => ['Hủy đơn', 'bi-x-circle']
+                                                    ];
                                                     break;
                                                 case 'DELIVERED':
-                                                    $next_options = ['COMPLETED' => 'Hoàn tất đơn'];
+                                                    $next_options = [
+                                                        'COMPLETED' => ['Hoàn tất đơn', 'bi-shield-check']
+                                                    ];
                                                     break;
                                             }
 
                                             if (!empty($next_options)):
                                                 echo '<div class="dropdown-divider"></div>';
-                                                echo '<li class="dropdown-header x-small text-muted text-uppercase fw-bold pb-1 pt-1">Chuyển trạng thái</li>';
-                                                foreach ($next_options as $val => $label):
+                                                echo '<li class="dropdown-header small text-muted text-uppercase fw-bold pb-1 pt-1">Chuyển trạng thái</li>';
+                                                foreach ($next_options as $val => $data):
+                                                    $label = $data[0];
+                                                    $icon = $data[1];
                                             ?>
                                             <li>
-                                                <form method="POST" onsubmit="return confirm('Bạn chắc chắn muốn chuyển sang trạng thái <?php echo $label; ?>?')">
+                                                <form method="POST" onsubmit="return confirm('Bạn chắc chắn muốn chuyển sang trạng thái <?php echo $label; ?>?')" class="m-0">
                                                     <input type="hidden" name="order_id" value="<?php echo $o['id']; ?>">
                                                     <input type="hidden" name="status" value="<?php echo $val; ?>">
                                                     <button type="submit" class="dropdown-item rounded-3 small py-2 <?php echo $val === 'CANCELLED' ? 'text-danger' : 'text-primary'; ?>">
-                                                        <i class="bi bi-arrow-right-short me-1"></i> <?php echo $label; ?>
+                                                        <i class="bi <?php echo $icon; ?> me-2"></i> <?php echo $label; ?>
                                                     </button>
                                                 </form>
                                             </li>
@@ -432,3 +459,42 @@ require_once __DIR__ . '/includes/header.php';
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('order-search');
+    const tableBody = document.querySelector('#order-table tbody');
+    const rows = tableBody.querySelectorAll('tr');
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            // Chỉ lọc những dòng có dữ liệu (không phải dòng "Không có đơn hàng")
+            if (row.cells.length > 1) {
+                const text = row.textContent.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                if (text.includes(query)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+
+        // Nếu không có kết quả, hiển thị dòng thông báo
+        let noResultRow = document.getElementById('no-result-row');
+        if (visibleCount === 0 && query !== '') {
+            if (!noResultRow) {
+                noResultRow = document.createElement('tr');
+                noResultRow.id = 'no-result-row';
+                noResultRow.innerHTML = `<td colspan="7" class="text-center py-4 text-muted">Không tìm thấy đơn hàng phù hợp với "${this.value}"</td>`;
+                tableBody.appendChild(noResultRow);
+            }
+        } else if (noResultRow) {
+            noResultRow.remove();
+        }
+    });
+});
+</script>
