@@ -35,6 +35,7 @@ function getProducts($limit = null) {
             FROM products p 
             LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.position = 0
             WHERE p.is_active = 1 
+            GROUP BY p.id
             ORDER BY p.created_at DESC";
     if ($limit) $sql .= " LIMIT " . (int)$limit;
     return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
@@ -46,6 +47,7 @@ function getFlashSaleProducts($limit = 20) {
             FROM products p 
             LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.position = 0
             WHERE p.is_active = 1 AND p.sale_price IS NOT NULL AND p.sale_price < p.price
+            GROUP BY p.id
             ORDER BY (p.price - p.sale_price) / p.price DESC
             LIMIT " . (int)$limit;
     return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
@@ -283,7 +285,7 @@ function createOrder($data) {
         }
 
         $pdo->commit();
-        return $order_id;
+        return $order_no;
     } catch (Exception $e) {
         $pdo->rollBack();
         error_log("Order creation failed: " . $e->getMessage());
@@ -361,17 +363,54 @@ function get_flash() {
 function display_flash() {
     $items = get_flash();
     if (empty($items)) return;
+    echo '<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1060; margin-top: 80px;">';
     foreach ($items as $it) {
         $type = $it['type'];
         $msg = $it['message'];
-        $cls = 'info';
-        if ($type === 'error' || $type === 'danger') $cls = 'danger';
-        if ($type === 'success') $cls = 'success';
-        if ($type === 'warning') $cls = 'warning';
-        echo '<div class="container mt-2">';
-        echo '<div class="alert alert-' . $cls . ' flash-alert" role="alert">' . $msg . '</div>';
-        echo '</div>';
+        
+        $bg_color = '#0d6efd'; // Info
+        $icon = 'bi-info-circle-fill';
+        $title = 'Thông báo';
+
+        if ($type === 'error' || $type === 'danger') {
+            $bg_color = '#dc3545';
+            $icon = 'bi-x-circle-fill';
+            $title = 'Lỗi';
+        } elseif ($type === 'success') {
+            $bg_color = '#198754';
+            $icon = 'bi-check-circle-fill';
+            $title = 'Thành công';
+        } elseif ($type === 'warning') {
+            $bg_color = '#ffc107';
+            $icon = 'bi-exclamation-triangle-fill';
+            $title = 'Cảnh báo';
+        }
+
+        echo '
+        <div class="toast show animate__animated animate__fadeInRight" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000" style="min-width: 300px; border: none; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);">
+          <div class="toast-header" style="background: '.$bg_color.'; color: white; border-bottom: none;">
+            <i class="bi '.$icon.' me-2"></i>
+            <strong class="me-auto">'.$title.'</strong>
+            <small class="text-white-50">Vừa xong</small>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+          <div class="toast-body bg-white py-3">
+            '.$msg.'
+          </div>
+        </div>';
     }
+    echo '</div>';
+    echo '
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var toastElList = [].slice.call(document.querySelectorAll(".toast"));
+        var toastList = toastElList.map(function(toastEl) {
+            var t = new bootstrap.Toast(toastEl, { autohide: true, delay: 5000 });
+            return t;
+        });
+        // Auto-close toast logic if manual show is needed, but we used .show class
+    });
+    </script>';
 }
 
 function slugify($text) {
@@ -394,7 +433,7 @@ function get_order_status_badge($status) {
         'SHIPPING'   => ['label' => 'Đang vận chuyển','class' => 'status-shipping'],
         'DELIVERED'  => ['label' => 'Đã giao hàng', 'class' => 'status-delivered'],
         'COMPLETED'  => ['label' => 'Hoàn thành',   'class' => 'status-completed'],
-        'CANCELLED'  => ['label' => 'Đã hàng hủy',  'class' => 'status-cancelled'],
+        'CANCELLED'  => ['label' => 'Đã hủy',       'class' => 'status-cancelled'],
         'RETURNED'   => ['label' => 'Trả hàng',     'class' => 'status-returned']
     ];
     $data = $map[strtoupper($status)] ?? ['label' => $status, 'class' => 'status-default'];
