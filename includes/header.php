@@ -247,42 +247,27 @@ $menu_categories = $stmt_menu_cats->fetchAll();
       position: static !important;
     }
     .megamenu-parent .dropdown-menu {
-      width: 95vw;
-      max-width: 1200px;
+      width: 90vw;
+      max-width: 1000px;
       left: 50% !important;
       right: auto !important;
       transform: translateX(-50%) translateY(20px) !important;
-      padding: 0;
+      padding: 30px;
       border: none;
-      border-radius: 20px;
-      box-shadow: 0 25px 80px rgba(0,0,0,0.2);
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
       border-top: 5px solid var(--tet-gold);
       opacity: 0;
       visibility: hidden;
       display: block;
       transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-      overflow: hidden;
-    }
-    .megamenu-inner {
-      background: #fff;
-      display: flex;
-    }
-    .megamenu-sidebar {
-      width: 280px;
-      background: #f8f9fa;
-      border-right: 1px solid #eee;
-      padding: 20px 0;
-    }
-    .megamenu-content {
-      flex: 1;
-      padding: 30px;
     }
     .megamenu-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
       color: var(--tet-red);
       text-transform: uppercase;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
       letter-spacing: 0.5px;
@@ -290,50 +275,52 @@ $menu_categories = $stmt_menu_cats->fetchAll();
     .megamenu-title::after {
       content: "";
       flex: 1;
-      height: 1px;
-      background: linear-gradient(to right, #eee, transparent);
+      height: 2px;
+      background: #eee;
       margin-left: 15px;
     }
     .megamenu-link {
-      color: #444 !important;
-      font-weight: 500;
-      padding: 12px 20px !important;
+      color: #333 !important;
+      font-weight: 600;
+      padding: 10px 15px !important;
+      border-radius: 10px;
       transition: all 0.2s;
-      background: transparent;
-      border: none;
+      background: #fdfdfd;
+      border: 1px solid #eee;
       display: flex;
       align-items: center;
-      font-size: 15px;
-      position: relative;
+      margin-bottom: 12px;
+      font-size: 14px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
     }
     .megamenu-link:hover {
-      background: #fff;
+      background: var(--tet-soft-bg);
       color: var(--tet-red) !important;
-      padding-left: 30px !important;
-    }
-    .megamenu-link.active {
-      background: #fff;
-      color: var(--tet-red) !important;
-      font-weight: 700;
-      border-left: 4px solid var(--tet-red);
+      border-color: var(--tet-gold);
+      transform: translateX(8px);
     }
     .megamenu-link i {
       font-size: 18px;
-      margin-right: 15px;
+      margin-right: 12px;
       color: var(--tet-red);
-      opacity: 0.8;
-      width: 24px;
-      text-align: center;
+      background: #fff;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     .megamenu-group-title {
-      font-size: 12px;
-      font-weight: 800;
-      color: #adb5bd;
+      font-size: 11px;
+      font-weight: 700;
+      color: #999;
       text-transform: uppercase;
-      padding: 10px 20px;
-      margin-top: 15px;
+      margin: 15px 0 10px 5px;
       display: block;
-      letter-spacing: 1.5px;
+      letter-spacing: 1px;
     }
     .megamenu-group-title:first-child {
       margin-top: 0;
@@ -790,96 +777,68 @@ $menu_categories = $stmt_menu_cats->fetchAll();
             <li class="nav-item dropdown megamenu-parent">
               <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Sản phẩm</a>
               <div class="dropdown-menu">
-                <div class="megamenu-inner">
-                  <!-- Sidebar Categories -->
-                  <div class="megamenu-sidebar">
-                    <?php 
-                    $ui_groups = [
-                      'Tiêu điểm' => ['choi-game', 'van-phong'],
-                      'Chuyên nghiệp' => ['doanh-nhan', 'lap-trinh', 'thiet-ke-do-hoa'],
-                      'Khác' => ['hoc-tap', 'ky-thuat', 'phan-tich-du-lieu', 'sang-tao-noi-dung', 'nhu-cau-co-ban']
-                    ];
+                <div class="row">
+                  <!-- Categories Column -->
+                  <div class="col-md-5 border-end">
+                    <div class="megamenu-title">Theo nhu cầu</div>
+                    <div class="row">
+                      <?php 
+                      $ui_groups = [
+                        'Tiêu điểm' => ['choi-game', 'van-phong'],
+                        'Chuyên nghiệp' => ['doanh-nhan', 'lap-trinh'],
+                        'Sáng tạo & Khác' => ['thiet-ke-do-hoa', 'hoc-tap']
+                      ];
 
-                    $icon_map = [
-                      'hoc-tap' => 'bi-mortarboard',
-                      'van-phong' => 'bi-building',
-                      'doanh-nhan' => 'bi-briefcase',
-                      'thiet-ke-do-hoa' => 'bi-palette',
-                      'lap-trinh' => 'bi-code-slash',
-                      'choi-game' => 'bi-controller',
-                      'ky-thuat' => 'bi-gear',
-                      'phan-tich-du-lieu' => 'bi-graph-up',
-                      'sang-tao-noi-dung' => 'bi-camera-reels',
-                      'nhu-cau-co-ban' => 'bi-house-heart'
-                    ];
+                      $icon_map = [
+                        'hoc-tap' => 'bi-mortarboard',
+                        'van-phong' => 'bi-building',
+                        'doanh-nhan' => 'bi-briefcase',
+                        'thiet-ke-do-hoa' => 'bi-palette',
+                        'lap-trinh' => 'bi-code-slash',
+                        'choi-game' => 'bi-controller'
+                      ];
 
-                    foreach ($ui_groups as $group_name => $slugs) {
-                      echo '<span class="megamenu-group-title">' . $group_name . '</span>';
-                      foreach ($slugs as $slug) {
-                        foreach ($menu_categories as $cat) {
-                          if ($cat['slug'] === $slug) {
-                            $icon = $icon_map[$slug] ?? 'bi-tag';
-                            $active = (isset($_GET['category']) && $_GET['category'] == $slug) ? 'active' : '';
-                            echo '<a href="/weblaptop/search.php?category='.$slug.'" class="megamenu-link '.$active.'">
-                                    <i class="bi '.$icon.'"></i> '.htmlspecialchars($cat['name']).'
-                                  </a>';
+                      echo '<div class="col-6">';
+                      $count = 0;
+                      foreach ($ui_groups as $group_name => $slugs) {
+                        if ($count == 2) echo '</div><div class="col-6">';
+                        echo '<span class="megamenu-group-title">' . $group_name . '</span>';
+                        foreach ($slugs as $slug) {
+                          foreach ($menu_categories as $cat) {
+                            if ($cat['slug'] === $slug) {
+                              $icon = $icon_map[$slug] ?? 'bi-tag';
+                              echo '<a href="/weblaptop/search.php?category='.$slug.'" class="megamenu-link">
+                                      <i class="bi '.$icon.'"></i> '.htmlspecialchars($cat['name']).'
+                                    </a>';
+                            }
                           }
                         }
+                        $count++;
                       }
-                    }
-                    ?>
-                    <div class="px-4 mt-4">
-                      <a href="/weblaptop/search.php" class="small text-danger fw-bold text-decoration-none">Xem tất cả nhu cầu <i class="bi bi-arrow-right"></i></a>
+                      ?>
+                      </div>
+                    </div>
+                    <div class="mt-3 p-3 rounded-4 text-center" style="background: var(--tet-soft-bg); border: 1px dashed var(--tet-gold);">
+                      <a href="/weblaptop/search.php" class="small text-danger fw-bold text-decoration-none">Xem tất cả danh mục <i class="bi bi-arrow-right"></i></a>
                     </div>
                   </div>
 
-                  <!-- Content Area -->
-                  <div class="megamenu-content">
-                    <div class="row">
-                      <div class="col-lg-8">
-                        <div class="megamenu-title">Thương hiệu chính hãng</div>
-                        <div class="row g-3">
-                          <?php foreach ($menu_brands as $b): ?>
-                            <div class="col-4 col-md-3">
-                              <a class="megamenu-brand-item" href="/weblaptop/search.php?brand=<?php echo urlencode($b['name']); ?>">
-                                <?php if ($b['logo']): ?>
-                                  <img src="<?php echo htmlspecialchars($b['logo']); ?>" alt="<?php echo htmlspecialchars($b['name']); ?>">
-                                <?php else: ?>
-                                  <div class="mb-2" style="color: var(--tet-red);"><i class="bi bi-tag-fill" style="font-size: 24px;"></i></div>
-                                <?php endif; ?>
-                                <span><?php echo htmlspecialchars($b['name']); ?></span>
-                              </a>
-                            </div>
-                          <?php endforeach; ?>
+                  <!-- Brands Column -->
+                  <div class="col-md-7">
+                    <div class="megamenu-title">Thương hiệu chính hãng</div>
+                    <div class="row g-3">
+                      <?php foreach ($menu_brands as $b): ?>
+                        <div class="col-4">
+                          <a class="megamenu-brand-item" href="/weblaptop/search.php?brand=<?php echo urlencode($b['name']); ?>">
+                            <?php if ($b['logo']): ?>
+                              <img src="<?php echo htmlspecialchars($b['logo']); ?>" alt="<?php echo htmlspecialchars($b['name']); ?>">
+                            <?php else: ?>
+                              <div class="mb-2" style="color: var(--tet-red);"><i class="bi bi-tag-fill" style="font-size: 24px;"></i></div>
+                            <?php endif; ?>
+                            <span><?php echo htmlspecialchars($b['name']); ?></span>
+                          </a>
                         </div>
-                      </div>
-                      
-                      <div class="col-lg-4">
-                        <div class="megamenu-title">Ưu đãi Hot</div>
-                        <div class="megamenu-promo-banner">
-                          <h4>SẮM LAPTOP MỚI</h4>
-                          <h2 class="fw-black mb-2" style="font-weight: 900; color: #fff;">TẾT TRỌN NIỀM VUI</h2>
-                          <p>Nhận ngay Lì Xì đến 2.026.000đ khi mua Laptop Gaming & Văn phòng cao cấp.</p>
-                          <a href="/weblaptop/promotions.php" class="btn">Nhận Lì Xì Ngay</a>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="row mt-4">
-                      <div class="col-12">
-                        <div class="p-3 rounded-4 d-flex align-items-center justify-content-between" style="background: var(--tet-soft-bg); border: 1px dashed var(--tet-gold);">
-                          <div class="d-flex align-items-center">
-                            <div class="rounded-circle bg-white p-2 me-3" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--tet-gold);">
-                              <i class="bi bi-shield-check text-success" style="font-size: 24px;"></i>
-                            </div>
-                            <div>
-                              <div class="fw-bold" style="color: var(--tet-red);">Bảo hành vàng lên đến 24 tháng</div>
-                              <div class="small text-muted">Yên tâm sử dụng, lỗi 1 đổi 1 trong 30 ngày đầu.</div>
-                            </div>
-                          </div>
-                          <a href="/weblaptop/contact.php" class="btn btn-outline-danger btn-sm rounded-pill px-4">Tư vấn ngay</a>
-                        </div>
-                      </div>
+                      <?php endforeach; ?>
                     </div>
                   </div>
                 </div>
