@@ -48,15 +48,16 @@ $top_products = $pdo->query("
     LIMIT 5
 ")->fetchAll();
 
-// 3. Order Status Distribution (With Vietnamese Labels)
+// 3. Order Status Distribution (All possible statuses)
 $status_map = [
-    'PENDING' => 'Chờ xác nhận',
-    'CONFIRMED' => 'Đã xác nhận',
+    'PENDING'    => 'Chờ xác nhận',
+    'CONFIRMED'  => 'Đã xác nhận',
     'PROCESSING' => 'Đang xử lý',
-    'SHIPPING' => 'Đang giao',
-    'DELIVERED' => 'Đã giao',
-    'COMPLETED' => 'Hoàn thành',
-    'CANCELLED' => 'Đã hủy'
+    'SHIPPING'   => 'Đang giao',
+    'DELIVERED'  => 'Đã giao',
+    'COMPLETED'  => 'Hoàn thành',
+    'CANCELLED'  => 'Đã hủy',
+    'RETURNED'   => 'Bị trả hàng'
 ];
 
 $order_stats_raw = $pdo->query("
@@ -65,12 +66,15 @@ $order_stats_raw = $pdo->query("
     GROUP BY order_status
 ")->fetchAll();
 
-$status_labels = [];
-$status_counts = [];
+$status_counts_temp = array_fill_keys(array_keys($status_map), 0);
 foreach ($order_stats_raw as $row) {
-    $status_labels[] = $status_map[$row['order_status']] ?? $row['order_status'];
-    $status_counts[] = (int)$row['count'];
+    if (isset($status_counts_temp[$row['order_status']])) {
+        $status_counts_temp[$row['order_status']] = (int)$row['count'];
+    }
 }
+
+$status_labels = array_values($status_map);
+$status_counts = array_values($status_counts_temp);
 
 // 4. Category Performance
 $category_stats = $pdo->query("
@@ -130,9 +134,9 @@ require_once __DIR__ . '/includes/header.php';
                     <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm bg-white" onclick="location.reload()">
                         <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
                     </button>
-                    <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+                    <a href="export.php?type=revenue" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
                         <i class="bi bi-cloud-download me-1"></i> Xuất Excel
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
@@ -241,7 +245,7 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="analytics-card">
                     <div class="card-title mb-4"><i class="bi bi-funnel text-info"></i> Luồng đơn hàng</div>
                     <div class="chart-container" style="height: 280px;">
-                        <canvas id="statusChart"></canvas>
+                        <canvas id="statusChart" width="241" height="350" style="display: block; box-sizing: border-box; height: 280px; width: 193.3px;"></canvas>
                     </div>
                 </div>
 
@@ -340,7 +344,16 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: <?php echo json_encode($status_labels); ?>,
             datasets: [{
                 data: <?php echo json_encode($status_counts); ?>,
-                backgroundColor: ['#ff8a00', '#00b0ff', '#00bfa5', '#ff4d4f', '#2f54eb', '#722ed1', '#eb2f96', '#faad14'],
+                backgroundColor: [
+                    '#f59e0b', // PENDING - Nâu vàng
+                    '#3b82f6', // CONFIRMED - Xanh dương
+                    '#8b5cf6', // PROCESSING - Tím
+                    '#6366f1', // SHIPPING - Indigo
+                    '#10b981', // DELIVERED - Lục
+                    '#059669', // COMPLETED - Lục đậm
+                    '#ef4444', // CANCELLED - Đỏ
+                    '#64748b'  // RETURNED - Xám
+                ],
                 borderWidth: 0,
                 hoverOffset: 10
             }]

@@ -111,6 +111,9 @@ require_once __DIR__ . '/includes/header.php';
                 <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="location.reload()">
                     <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
                 </button>
+                <a href="export.php?type=customers" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+                    <i class="bi bi-download me-1"></i> Xuất Excel
+                </a>
             </div>
         </div>
 
@@ -213,7 +216,6 @@ require_once __DIR__ . '/includes/header.php';
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
-</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -221,17 +223,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const tableRows = document.querySelectorAll('#customer-table tbody tr');
 
     searchInput.addEventListener('input', function() {
+        if (!tableRows.length || (tableRows.length === 1 && tableRows[0].cells.length === 1)) return;
+
         const query = this.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         
         tableRows.forEach(row => {
-            const text = row.textContent.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            row.style.display = text.includes(query) ? '' : 'none';
+            if (row.cells.length > 1) {
+                const text = row.textContent.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                row.style.display = text.includes(query) ? '' : 'none';
+            }
         });
     });
 });
 </script>
-        </div>
-    </div>
-</div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -39,14 +39,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete') {
         $id = (int)$_POST['id'];
         $stmt = $pdo->prepare("DELETE FROM vouchers WHERE id = ?");
-        $stmt->execute([id]);
-        set_flash("success", "Đã xóa voucher.");
+        $stmt->execute([$id]);
+        set_flash("success", "Đã xóa voucher thành công.");
     }
     header("Location: vouchers.php");
     exit;
 }
 
-$vouchers = $pdo->query("SELECT * FROM vouchers ORDER BY created_at DESC")->fetchAll();
+// Logic to check voucher status based on current time
+$now = date('Y-m-d H:i:s');
+$status_filter = $_GET['status'] ?? 'all';
+
+$sql = "
+    SELECT * FROM (
+        SELECT *, 
+        CASE 
+            WHEN is_active = 0 THEN 'INACTIVE'
+            WHEN usage_count >= usage_limit AND usage_limit IS NOT NULL THEN 'EXHAUSTED'
+            WHEN '$now' < start_date THEN 'UPCOMING'
+            WHEN '$now' > end_date THEN 'EXPIRED'
+            ELSE 'ACTIVE'
+        END as status_key
+        FROM vouchers
+    ) as v_table
+";
+
+if ($status_filter !== 'all') {
+    $sql .= " WHERE status_key = " . $pdo->quote($status_filter);
+}
+
+$sql .= " ORDER BY created_at DESC";
+$vouchers = $pdo->query($sql)->fetchAll();
 
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -151,11 +174,16 @@ require_once __DIR__ . '/includes/header.php';
             <div class="card-header bg-white py-3 border-bottom border-secondary border-opacity-10 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-ticket-perforated me-2 text-primary"></i>Danh sách mã giảm giá</h6>
                 <div class="d-flex gap-2">
-                    <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3 shadow-none" style="width: 160px;">
-                        <option>Tất cả trạng thái</option>
-                        <option>Đang hoạt động</option>
-                        <option>Đã kết thúc</option>
-                    </select>
+                    <form method="GET" class="d-flex gap-2">
+                        <select name="status" class="form-select form-select-sm border-0 bg-light rounded-pill px-4 shadow-none" style="width: 200px;" onchange="this.form.submit()">
+                            <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>Tất cả trạng thái</option>
+                            <option value="ACTIVE" <?php echo $status_filter === 'ACTIVE' ? 'selected' : ''; ?>>Đang hoạt động</option>
+                            <option value="UPCOMING" <?php echo $status_filter === 'UPCOMING' ? 'selected' : ''; ?>>Sắp diễn ra</option>
+                            <option value="EXPIRED" <?php echo $status_filter === 'EXPIRED' ? 'selected' : ''; ?>>Đã hết hạn</option>
+                            <option value="EXHAUSTED" <?php echo $status_filter === 'EXHAUSTED' ? 'selected' : ''; ?>>Đã hết lượt dùng</option>
+                            <option value="INACTIVE" <?php echo $status_filter === 'INACTIVE' ? 'selected' : ''; ?>>Đang tạm dừng</option>
+                        </select>
+                    </form>
                 </div>
             </div>
             <div class="table-responsive">
@@ -213,13 +241,19 @@ require_once __DIR__ . '/includes/header.php';
                                 </div>
                             </td>
                             <td class="text-center">
-                                <?php if ($v['is_active'] && strtotime($v['end_date']) >= time()): ?>
-                                    <span class="status-badge status-running">Đang chạy</span>
-                                <?php elseif (!$v['is_active']): ?>
-                                    <span class="status-badge status-paused">Tạm dừng</span>
-                                <?php else: ?>
-                                    <span class="status-badge status-ended">Hết hạn</span>
-                                <?php endif; ?>
+                                <?php 
+                                    $status_map = [
+                                        'ACTIVE' => ['label' => 'Đang chạy', 'class' => 'status-running'],
+                                        'UPCOMING' => ['label' => 'Sắp tới', 'class' => 'bg-info bg-opacity-10 text-info'],
+                                        'EXPIRED' => ['label' => 'Hết hạn', 'class' => 'status-ended'],
+                                        'EXHAUSTED' => ['label' => 'Hết lượt', 'class' => 'bg-warning bg-opacity-10 text-warning'],
+                                        'INACTIVE' => ['label' => 'Tạm dừng', 'class' => 'status-paused']
+                                    ];
+                                    $s = $status_map[$v['status_key']] ?? $status_map['INACTIVE'];
+                                ?>
+                                <span class="status-badge <?php echo $s['class']; ?> rounded-pill px-3 py-1 fw-bold border-0" style="font-size: 0.7rem;">
+                                    <?php echo $s['label']; ?>
+                                </span>
                             </td>
                             <td class="text-end pe-4">
                                 <div class="d-flex justify-content-end gap-2">
