@@ -22,10 +22,11 @@ $menu_brands = $stmt_menu_brands->fetchAll();
   <style>
     body { margin: 0 !important; padding: 0 !important; }
     :root { 
-      --tet-red: #d32f2f; 
-      --tet-gold: #ffc107;
-      --tet-dark-red: #a51d1d;
-      --tet-light-gold: #ffecb3;
+      --tet-red: #C62222; 
+      --tet-gold: #D4AF37;
+      --tet-dark-red: #8B0000;
+      --tet-light-gold: #F9E79F;
+      --tet-soft-bg: #FEF9E7;
     }
     .tet-header { 
       background: linear-gradient(135deg, #c62828, #8e0000); 
@@ -281,27 +282,35 @@ $menu_brands = $stmt_menu_brands->fetchAll();
     }
     .megamenu-link {
       color: #333 !important;
-      font-weight: 500;
-      padding: 8px 12px !important;
-      border-radius: 8px;
+      font-weight: 600;
+      padding: 10px 15px !important;
+      border-radius: 10px;
       transition: all 0.2s;
-      background: #f8f9fa;
+      background: #fff;
       border: 1px solid #eee;
       display: flex;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       font-size: 14px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
     }
     .megamenu-link:hover {
-      background: var(--tet-light-gold);
+      background: var(--tet-soft-bg);
       color: var(--tet-red) !important;
       border-color: var(--tet-gold);
-      transform: translateX(5px);
+      transform: translateX(8px);
     }
     .megamenu-link i {
-      font-size: 18px;
+      font-size: 20px;
       margin-right: 12px;
       color: var(--tet-red);
+      background: #fff5f5;
+      width: 35px;
+      height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
     }
     .megamenu-brand-item {
       text-align: center;
@@ -425,10 +434,10 @@ $menu_brands = $stmt_menu_brands->fetchAll();
 
     /* Tet Footer Styling */
     .tet-footer {
-      background: linear-gradient(135deg, #8e0000, #c62828);
+      background: linear-gradient(135deg, var(--tet-dark-red), var(--tet-red));
       background-image: 
         url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"), 
-        linear-gradient(135deg, #8e0000, #c62828);
+        linear-gradient(135deg, var(--tet-dark-red), var(--tet-red));
       color: #fff;
       border-top: 5px solid var(--tet-gold);
       position: relative;
@@ -664,32 +673,32 @@ $menu_brands = $stmt_menu_brands->fetchAll();
                       <div class="megamenu-title">Theo nhu cầu</div>
                       <div class="row">
                         <div class="col-6">
-                          <a href="/weblaptop/search.php?category_id=1" class="megamenu-link">
+                          <a href="/weblaptop/search.php?category=laptop-van-phong" class="megamenu-link">
                             <i class="bi bi-laptop"></i> Văn Phòng
                           </a>
-                          <a href="/weblaptop/search.php?category_id=2" class="megamenu-link">
+                          <a href="/weblaptop/search.php?category=laptop-gaming" class="megamenu-link">
                             <i class="bi bi-controller"></i> Gaming <span class="tet-badge">Hot</span>
                           </a>
-                          <a href="/weblaptop/search.php?category_id=3" class="megamenu-link">
+                          <a href="/weblaptop/search.php?category=laptop-doanh-nhan" class="megamenu-link">
                             <i class="bi bi-briefcase"></i> Doanh Nhân
                           </a>
                         </div>
                         <div class="col-6">
-                          <a href="/weblaptop/search.php?category_id=4" class="megamenu-link">
+                          <a href="/weblaptop/search.php?category=laptop-hoc-tap" class="megamenu-link">
                             <i class="bi bi-mortarboard"></i> Sinh Viên
                           </a>
-                          <a href="/weblaptop/search.php?category_id=5" class="megamenu-link">
+                          <a href="/weblaptop/search.php?category=laptop-cao-cap" class="megamenu-link">
                             <i class="bi bi-gem"></i> Cao Cấp
                           </a>
-                          <a href="/weblaptop/search.php?category_id=6" class="megamenu-link">
+                          <a href="/weblaptop/search.php?category=laptop-2-trong-1" class="megamenu-link">
                             <i class="bi bi-unfold-vertical"></i> 2-in-1
                           </a>
                         </div>
                       </div>
                       
-                      <div class="mt-4 p-3 rounded-4 bg-light text-center border">
-                        <p class="small mb-2 fw-bold text-muted">Hỗ trợ chọn mua Laptop Tết?</p>
-                        <a href="/weblaptop/contact.php" class="btn btn-sm btn-outline-danger rounded-pill">Liên hệ ngay</a>
+                      <div class="mt-4 p-3 rounded-4 text-center border" style="background: var(--tet-soft-bg); border-color: var(--tet-light-gold) !important;">
+                        <p class="small mb-2 fw-bold" style="color: var(--tet-dark-red);">Hỗ trợ chọn mua Laptop Tết?</p>
+                        <a href="/weblaptop/contact.php" class="btn btn-sm btn-danger rounded-pill px-3" style="background: var(--tet-red); border: none;">Liên hệ ngay</a>
                       </div>
                     </div>
 
@@ -703,7 +712,7 @@ $menu_brands = $stmt_menu_brands->fetchAll();
                               <?php if ($b['logo']): ?>
                                 <img src="<?php echo htmlspecialchars($b['logo']); ?>" alt="<?php echo htmlspecialchars($b['name']); ?>">
                               <?php else: ?>
-                                <div class="mb-2 text-danger"><i class="bi bi-tag-fill" style="font-size: 24px;"></i></div>
+                                <div class="mb-2" style="color: var(--tet-red);"><i class="bi bi-tag-fill" style="font-size: 24px;"></i></div>
                               <?php endif; ?>
                               <span><?php echo htmlspecialchars($b['name']); ?></span>
                             </a>
@@ -711,7 +720,7 @@ $menu_brands = $stmt_menu_brands->fetchAll();
                         <?php endforeach; ?>
                         
                         <div class="col-4 col-lg-3">
-                          <a class="megamenu-brand-item d-flex flex-column justify-content-center align-items-center bg-danger text-white border-0" href="/weblaptop/search.php">
+                          <a class="megamenu-brand-item d-flex flex-column justify-content-center align-items-center border-0" href="/weblaptop/search.php" style="background: var(--tet-red); color: white;">
                             <i class="bi bi-plus-circle mb-1" style="font-size: 20px;"></i>
                             <span class="text-white">Xem tất cả</span>
                           </a>
@@ -720,9 +729,9 @@ $menu_brands = $stmt_menu_brands->fetchAll();
 
                       <div class="row mt-4">
                         <div class="col-12">
-                          <div class="alert alert-warning py-2 mb-0 border-0 rounded-3 d-flex align-items-center" style="background: rgba(255,193,7,0.15)">
-                            <i class="bi bi-gift-fill me-2 text-danger"></i>
-                            <span class="small fw-bold">Mua Laptop đón Tết - Nhận Lì Xì tới 2.026.000đ!</span>
+                          <div class="alert py-2 mb-0 border-0 rounded-3 d-flex align-items-center" style="background: linear-gradient(90deg, #fff3e0, #fff); border-left: 4px solid var(--tet-gold) !important;">
+                            <i class="bi bi-gift-fill me-2" style="color: var(--tet-red);"></i>
+                            <span class="small fw-bold" style="color: var(--tet-dark-red);">Mua Laptop đón Tết - Nhận Lì Xì tới 2.026.000đ!</span>
                           </div>
                         </div>
                       </div>
