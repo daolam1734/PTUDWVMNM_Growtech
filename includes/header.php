@@ -97,9 +97,9 @@ $menu_brands = $stmt_menu_brands->fetchAll();
       justify-content: center;
     }
     .search-btn:hover { background: #b71c1c; }
-    .cart-icon { font-size: 26px; position: relative; margin-left: 15px; color: #fff !important; transition: transform 0.2s; }
-    .cart-icon:hover { transform: scale(1.05); }
-    .cart-badge { 
+    .cart-icon, .notif-icon { font-size: 26px; position: relative; margin-left: 20px; color: #fff !important; transition: transform 0.2s; cursor: pointer; }
+    .cart-icon:hover, .notif-icon:hover { transform: scale(1.08); }
+    .cart-badge, .notif-badge { 
       position: absolute; 
       top: -8px; 
       right: -12px; 
@@ -107,11 +107,18 @@ $menu_brands = $stmt_menu_brands->fetchAll();
       color: var(--tet-red); 
       border-radius: 12px; 
       padding: 1px 7px; 
-      font-size: 12px; 
-      font-weight: 700; 
+      font-size: 11px; 
+      font-weight: 800; 
       border: 2px solid var(--tet-red);
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       line-height: 1;
+      min-width: 18px;
+      text-align: center;
+    }
+    .notif-badge {
+      background: var(--tet-gold);
+      color: #000;
+      border-color: #fff;
     }
 
     /* Cart Dropdown */
@@ -455,11 +462,25 @@ $menu_brands = $stmt_menu_brands->fetchAll();
         <div id="search-suggestions"></div>
       </div>
 
-      <div class="position-relative">
-        <a href="/weblaptop/cart.php" class="cart-icon" id="header-cart-btn">
-          <i class="bi bi-cart3"></i>
-          <span class="cart-badge"><?php echo isset($_SESSION["cart"]) ? array_sum($_SESSION["cart"]) : 0; ?></span>
-        </a>
+      <div class="d-flex align-items-center">
+        <!-- Notifications -->
+        <?php if (!empty($_SESSION['user_id'])): 
+          $notif_count = getUnreadNotificationCount($_SESSION['user_id']);
+        ?>
+          <a href="/weblaptop/notifications.php" class="notif-icon" title="Thông báo">
+            <i class="bi bi-bell"></i>
+            <?php if ($notif_count > 0): ?>
+              <span class="notif-badge"><?php echo $notif_count; ?></span>
+            <?php endif; ?>
+          </a>
+        <?php endif; ?>
+
+        <!-- Cart -->
+        <div class="position-relative">
+          <a href="/weblaptop/cart.php" class="cart-icon" id="header-cart-btn">
+            <i class="bi bi-cart3"></i>
+            <span class="cart-badge"><?php echo isset($_SESSION["cart"]) ? array_sum($_SESSION["cart"]) : 0; ?></span>
+          </a>
         
         <!-- Cart Dropdown -->
         <div id="header-cart-dropdown">
