@@ -9,6 +9,10 @@ $stmt_menu_brands = $pdo->prepare("SELECT * FROM brands WHERE name IN ($placehol
 $stmt_execute_params = array_merge($allowed_brands, $allowed_brands);
 $stmt_menu_brands->execute($stmt_execute_params);
 $menu_brands = $stmt_menu_brands->fetchAll();
+
+// Fetch all categories for menu
+$stmt_menu_cats = $pdo->query("SELECT * FROM categories ORDER BY name ASC");
+$menu_categories = $stmt_menu_cats->fetchAll();
 ?>
 <!doctype html>
 <html lang="vi">
@@ -672,28 +676,29 @@ $menu_brands = $stmt_menu_brands->fetchAll();
                     <div class="col-md-5 border-end">
                       <div class="megamenu-title">Theo nhu cầu</div>
                       <div class="row">
-                        <div class="col-6">
-                          <a href="/weblaptop/search.php?category=laptop-van-phong" class="megamenu-link">
-                            <i class="bi bi-laptop"></i> Văn Phòng
-                          </a>
-                          <a href="/weblaptop/search.php?category=laptop-gaming" class="megamenu-link">
-                            <i class="bi bi-controller"></i> Gaming <span class="tet-badge">Hot</span>
-                          </a>
-                          <a href="/weblaptop/search.php?category=laptop-doanh-nhan" class="megamenu-link">
-                            <i class="bi bi-briefcase"></i> Doanh Nhân
-                          </a>
-                        </div>
-                        <div class="col-6">
-                          <a href="/weblaptop/search.php?category=laptop-hoc-tap" class="megamenu-link">
-                            <i class="bi bi-mortarboard"></i> Sinh Viên
-                          </a>
-                          <a href="/weblaptop/search.php?category=laptop-cao-cap" class="megamenu-link">
-                            <i class="bi bi-gem"></i> Cao Cấp
-                          </a>
-                          <a href="/weblaptop/search.php?category=laptop-2-trong-1" class="megamenu-link">
-                            <i class="bi bi-unfold-vertical"></i> 2-in-1
-                          </a>
-                        </div>
+                        <?php 
+                        $chunks = array_chunk($menu_categories, ceil(count($menu_categories) / 2));
+                        foreach ($chunks as $chunk):
+                        ?>
+                          <div class="col-6">
+                            <?php foreach ($chunk as $cat): 
+                              $icon = "bi-tag";
+                              if (strpos($cat['slug'], 'van-phong') !== false) $icon = "bi-laptop";
+                              elseif (strpos($cat['slug'], 'gaming') !== false) $icon = "bi-controller";
+                              elseif (strpos($cat['slug'], 'doanh-nhan') !== false) $icon = "bi-briefcase";
+                              elseif (strpos($cat['slug'], 'hoc-tap') !== false || strpos($cat['slug'], 'sinh-vien') !== false) $icon = "bi-mortarboard";
+                              elseif (strpos($cat['slug'], 'cao-cap') !== false) $icon = "bi-gem";
+                              elseif (strpos($cat['slug'], '2-trong-1') !== false) $icon = "bi-unfold-vertical";
+                            ?>
+                              <a href="/weblaptop/search.php?category=<?php echo $cat['slug']; ?>" class="megamenu-link">
+                                <i class="bi <?php echo $icon; ?>"></i> <?php echo htmlspecialchars($cat['name']); ?>
+                                <?php if (strpos($cat['slug'], 'gaming') !== false): ?>
+                                  <span class="tet-badge">Hot</span>
+                                <?php endif; ?>
+                              </a>
+                            <?php endforeach; ?>
+                          </div>
+                        <?php endforeach; ?>
                       </div>
                       
                       <div class="mt-4 p-3 rounded-4 text-center border" style="background: var(--tet-soft-bg); border-color: var(--tet-light-gold) !important;">
