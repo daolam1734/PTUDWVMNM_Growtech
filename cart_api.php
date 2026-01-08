@@ -155,10 +155,10 @@ if ($action === 'update') {
         
         $items_html = '';
         foreach ($cart_items as $item) {
-            $img = $item["image_url"] ?: 'https://placehold.co/45x45?text=No+Image';
+            $img = getProductImage($item['id']);
             $p_price = number_format($item['price'], 0, ',', '.') . ' đ';
             $p_qty = $_SESSION["cart"][$item['id']];
-            $p_url = "/weblaptop/product.php?id=" . $item['id'];
+            $p_url = BASE_URL . "product.php?id=" . $item['id'];
             $p_name = htmlspecialchars($item['name']);
             
             $items_html .= "

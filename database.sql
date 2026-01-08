@@ -101,15 +101,17 @@ CREATE TABLE IF NOT EXISTS `products` (
 CREATE TABLE IF NOT EXISTS `product_specifications` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `product_id` INT NOT NULL UNIQUE,
-  `cpu` VARCHAR(255),
+  `cpu` VARCHAR(512),
   `ram` VARCHAR(100),            -- e.g., "16GB DDR4"
   `storage` VARCHAR(100),        -- e.g., "512GB NVMe SSD"
-  `gpu` VARCHAR(255),
+  `gpu` VARCHAR(512),
   `screen` VARCHAR(255),         -- e.g., "15.6\" FHD 144Hz"
+  `wifi` VARCHAR(255),
+  `bluetooth` VARCHAR(255),
   `os` VARCHAR(100),
   `weight` VARCHAR(50),
   `battery` VARCHAR(100),
-  `ports` VARCHAR(255),
+  `ports` TEXT,
   `other` TEXT,
   FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
@@ -154,7 +156,7 @@ CREATE TABLE IF NOT EXISTS `cart_items` (
   `unit_price` DECIMAL(12,2) NOT NULL, -- price snapshot when added
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`cart_id`) REFERENCES `carts`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE RESTRICT
+  FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Orders

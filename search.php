@@ -276,10 +276,7 @@ require_once __DIR__ . '/includes/header.php';
             <?php else: ?>
                 <div class="row g-2">
                     <?php foreach ($products as $p): 
-                        $img = $p['image_url'];
-                        if (!$img || (strpos($img, 'http') !== 0 && strpos($img, '/') !== 0)) {
-                            $img = 'https://placehold.co/600x400?text=No+Image';
-                        }
+                        $img = getProductImage($p['id']);
                     ?>
                         <div class="col-6 col-md-4 col-lg-3 col-xl-2-4" style="width: 20%;">
                             <a href="product.php?id=<?php echo $p['id']; ?>" class="text-decoration-none">

@@ -357,13 +357,7 @@ require_once __DIR__ . '/includes/header.php';
                             $items = $stmt_items->fetchAll();
                             
                             foreach ($items as $it):
-                                $stmt_img = $pdo->prepare("SELECT url FROM product_images WHERE product_id = ? AND position = 0 LIMIT 1");
-                                $stmt_img->execute([$it['product_id']]);
-                                $img_row = $stmt_img->fetch();
-                                $img = $img_row ? $img_row['url'] : 'https://placehold.co/150?text=No+Image';
-                                if ($img && strpos($img, 'http') !== 0 && strpos($img, '/') !== 0) {
-                                    $img = 'https://placehold.co/' . $img;
-                                }
+                                $img = getProductImage($it['product_id']);
                             ?>
                                 <div class="d-flex align-items-center py-3 border-bottom border-dashed border-secondary border-opacity-10">
                                     <img src="<?php echo htmlspecialchars($img); ?>" class="product-img me-3 border">

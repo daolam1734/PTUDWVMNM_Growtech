@@ -112,8 +112,9 @@ if (!$product) {
 
     /* Spec Table */
     .spec-table { width: 100%; border-collapse: collapse; }
-    .spec-table th { width: 30%; background: #f8f9fa; color: #495057; font-weight: 600; padding: 12px 15px; font-size: 14px; border: 1px solid #eee; }
-    .spec-table td { background: #fff; padding: 12px 15px; font-size: 14px; border: 1px solid #eee; }
+    .spec-table th { width: 35%; background: #f8f9fa; color: #495057; font-weight: 600; padding: 12px 15px; font-size: 14px; border: 1px solid #eee; }
+    .spec-table td { padding: 12px 15px; font-size: 14px; border: 1px solid #eee; }
+    .section-card .spec-table td { background: #fff; }
 
     /* Benefits View */
     .benefit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
@@ -280,10 +281,20 @@ if (!$product) {
                         <tr><th>CPU</th><td><?php echo htmlspecialchars(($specs['cpu'] ?? '') ?: 'N/A'); ?></td></tr>
                         <tr><th>RAM</th><td><?php echo htmlspecialchars(($specs['ram'] ?? '') ?: 'N/A'); ?></td></tr>
                         <tr><th>Ổ cứng</th><td><?php echo htmlspecialchars(($specs['storage'] ?? '') ?: 'N/A'); ?></td></tr>
-                        <tr><th>GPU</th><td><?php echo htmlspecialchars(($specs['gpu'] ?? '') ?: 'N/A'); ?></td></tr>
+                        <tr><th>Card đồ họa</th><td><?php echo htmlspecialchars(($specs['gpu'] ?? '') ?: 'N/A'); ?></td></tr>
                         <tr><th>Màn hình</th><td><?php echo htmlspecialchars(($specs['screen'] ?? '') ?: 'N/A'); ?></td></tr>
+                        <tr>
+                            <th>Cổng kết nối</th>
+                            <td>
+                                Wi-Fi: <?php echo htmlspecialchars(($specs['wifi'] ?? '') ?: 'N/A'); ?><br>
+                                Bluetooth: <?php echo htmlspecialchars(($specs['bluetooth'] ?? '') ?: 'N/A'); ?><br>
+                                Cổng giao tiếp:<br>
+                                <?php echo nl2br(htmlspecialchars(($specs['ports'] ?? '') ?: 'Đang cập nhật')); ?>
+                            </td>
+                        </tr>
                         <tr><th>Trọng lượng</th><td><?php echo htmlspecialchars(($specs['weight'] ?? '') ?: 'N/A'); ?></td></tr>
-                        <tr><th>HĐH</th><td><?php echo htmlspecialchars(($specs['os'] ?? '') ?: 'N/A'); ?></td></tr>
+                        <tr><th>Dung lượng Pin</th><td><?php echo htmlspecialchars(($specs['battery'] ?? '') ?: 'Đang cập nhật'); ?></td></tr>
+                        <tr><th>Hệ điều hành</th><td><?php echo htmlspecialchars(($specs['os'] ?? '') ?: 'N/A'); ?></td></tr>
                         <?php else: ?>
                         <tr><td colspan="2" class="text-center py-4 text-muted">Thông số đang được cập nhật</td></tr>
                         <?php endif; ?>
@@ -314,11 +325,18 @@ if (!$product) {
                         <tr><th>Ổ cứng</th><td><?php echo htmlspecialchars(($specs['storage'] ?? '') ?: 'N/A'); ?></td></tr>
                         <tr><th>Card đồ họa</th><td><?php echo htmlspecialchars(($specs['gpu'] ?? '') ?: 'N/A'); ?></td></tr>
                         <tr><th>Màn hình</th><td><?php echo htmlspecialchars(($specs['screen'] ?? '') ?: 'N/A'); ?></td></tr>
+                        <tr>
+                            <th>Cổng kết nối</th>
+                            <td>
+                                Wi-Fi: <?php echo htmlspecialchars(($specs['wifi'] ?? '') ?: 'N/A'); ?><br>
+                                Bluetooth: <?php echo htmlspecialchars(($specs['bluetooth'] ?? '') ?: 'N/A'); ?><br>
+                                Cổng giao tiếp:<br>
+                                <?php echo nl2br(htmlspecialchars(($specs['ports'] ?? '') ?: 'Đang cập nhật')); ?>
+                            </td>
+                        </tr>
                         <tr><th>Trọng lượng</th><td><?php echo htmlspecialchars(($specs['weight'] ?? '') ?: 'N/A'); ?></td></tr>
-                        <tr><th>Cổng giao tiếp</th><td><?php echo htmlspecialchars(($specs['ports'] ?? '') ?: 'Đang cập nhật'); ?></td></tr>
                         <tr><th>Dung lượng Pin</th><td><?php echo htmlspecialchars(($specs['battery'] ?? '') ?: 'Đang cập nhật'); ?></td></tr>
                         <tr><th>Hệ điều hành</th><td><?php echo htmlspecialchars(($specs['os'] ?? '') ?: 'N/A'); ?></td></tr>
-                        <tr><th>Kích thước</th><td><?php echo htmlspecialchars(($specs['dimensions'] ?? '') ?: 'Đang cập nhật'); ?></td></tr>
                     </tbody>
                 </table>
             </div>

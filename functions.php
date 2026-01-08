@@ -63,21 +63,20 @@ function getProductImage($product_id) {
     $stmt->execute([$product_id]);
     $img = $stmt->fetchColumn();
     
-    // Fix broken placeholder URLs if they exist in DB
-    if ($img && !preg_match('/^https?:\/\//', $img) && !preg_match('/^\//', $img)) {
-        if (preg_match('/^\d+x\d+/', $img)) {
-            $img = 'https://placehold.co/' . $img;
-        }
-    }
-    
-    // Double check for common placeholder patterns that might have been stripped
-    if ($img && strpos($img, 'http') !== 0 && strpos($img, '/') !== 0) {
-        if (strpos($img, 'text=') !== false || preg_match('/^\d+x\d+/', $img)) {
-            $img = 'https://placehold.co/' . $img;
-        }
+    if (!$img) {
+        $img = 'https://placehold.co/600x400?text=No+Image';
+    } elseif (strpos($img, 'http') === 0) {
+        // Absolute URL, do nothing
+    } elseif (preg_match('/^\d+x\d+/', $img)) {
+        // Placeholder pattern
+        $img = 'https://placehold.co/' . $img;
+    } else {
+        // Local path
+        $img = ltrim($img, '/');
+        $img = BASE_URL . $img;
     }
 
-    $img_cache[$product_id] = $img ?: 'https://placehold.co/600x400?text=No+Image';
+    $img_cache[$product_id] = $img;
     return $img_cache[$product_id];
 }
 
@@ -85,7 +84,19 @@ function getProductImages($product_id) {
     global $pdo;
     $stmt = $pdo->prepare("SELECT * FROM product_images WHERE product_id = ? ORDER BY position ASC");
     $stmt->execute([$product_id]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    foreach ($images as &$img) {
+        $url = $img['url'];
+        if ($url && strpos($url, 'http') !== 0 && !preg_match('/^\d+x\d+/', $url)) {
+            $url = ltrim($url, '/');
+            $img['url'] = BASE_URL . $url;
+        } elseif (preg_match('/^\d+x\d+/', $url)) {
+            $img['url'] = 'https://placehold.co/' . $url;
+        }
+    }
+    
+    return $images;
 }
 
 function getProductSpecs($product_id) {

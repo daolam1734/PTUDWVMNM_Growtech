@@ -32,3 +32,23 @@ UPDATE shipments SET shipment_status = 'DELIVERED' WHERE shipment_status = 'da_g
 UPDATE shipments SET shipment_status = 'RETURNED' WHERE shipment_status = 'tra_lai';
 
 ALTER TABLE shipments MODIFY COLUMN shipment_status ENUM('NOT_SHIPPED', 'SHIPPING', 'DELIVERED', 'FAILED', 'RETURNED') NOT NULL DEFAULT 'NOT_SHIPPED';
+
+-- Product specifications updates
+ALTER TABLE product_specifications DROP COLUMN IF EXISTS dimensions;
+ALTER TABLE product_specifications MODIFY COLUMN ports TEXT;
+ALTER TABLE product_specifications MODIFY COLUMN cpu VARCHAR(512);
+ALTER TABLE product_specifications MODIFY COLUMN gpu VARCHAR(512);
+
+SET @s1 = (SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'product_specifications' AND column_name = 'wifi' AND table_schema = 'weblaptop') = 0,
+    'ALTER TABLE product_specifications ADD COLUMN wifi VARCHAR(255) AFTER screen',
+    'SELECT 1'
+));
+PREPARE stmt1 FROM @s1; EXECUTE stmt1; DEALLOCATE PREPARE stmt1;
+
+SET @s2 = (SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'product_specifications' AND column_name = 'bluetooth' AND table_schema = 'weblaptop') = 0,
+    'ALTER TABLE product_specifications ADD COLUMN bluetooth VARCHAR(255) AFTER wifi',
+    'SELECT 1'
+));
+PREPARE stmt2 FROM @s2; EXECUTE stmt2; DEALLOCATE PREPARE stmt2;

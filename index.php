@@ -359,10 +359,7 @@ if ($is_filtered) {
                     <div class="scroll-btn scroll-btn-right"><i class="bi bi-chevron-right"></i></div>
                     <div class="scroll-container">
                         <?php foreach ($flash_sale_products as $p): 
-                            $img = $p['image_url'];
-                            if (!$img || (strpos($img, 'http') !== 0 && strpos($img, '/') !== 0)) {
-                                $img = 'https://placehold.co/600x400?text=No+Image';
-                            }
+                            $img = getProductImage($p['id']);
                             $discount = round((1 - $p['sale_price'] / $p['price']) * 100);
                             $sold_count = rand(10, 50); 
                             $percent_sold = min(100, round(($sold_count / 60) * 100));
@@ -512,10 +509,7 @@ if ($is_filtered) {
                         // Initial load of 30 products for the scroll
                         $stmt_sug = $pdo->query("SELECT p.*, pi.url as image_url FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.position = 0 WHERE p.is_active = 1 GROUP BY p.id ORDER BY p.created_at DESC LIMIT 30");
                         while ($p = $stmt_sug->fetch()):
-                            $img = $p["image_url"];
-                            if (!$img || (strpos($img, 'http') !== 0 && strpos($img, '/') !== 0)) {
-                                $img = 'https://placehold.co/600x400?text=No+Image';
-                            }
+                            $img = getProductImage($p['id']);
                         ?>
                             <div class="scroll-item">
                                 <a href="product.php?id=<?php echo $p["id"]; ?>" class="text-decoration-none">
@@ -539,10 +533,7 @@ if ($is_filtered) {
             <div class="mb-3 text-muted">Kết quả tìm kiếm cho: <strong><?php echo htmlspecialchars($q ?: ($category_slug ?: $brand)); ?></strong></div>
             <div class="row g-2">
                 <?php foreach ($products as $p): 
-                    $img = $p["image_url"];
-                    if (!$img || (strpos($img, 'http') !== 0 && strpos($img, '/') !== 0)) {
-                        $img = 'https://placehold.co/600x400?text=No+Image';
-                    }
+                    $img = getProductImage($p['id']);
                 ?>
                     <div class="col-6 col-md-4 col-lg-2-4 mb-2" style="width: 20%;">
                         <a href="product.php?id=<?php echo $p["id"]; ?>" class="text-decoration-none">

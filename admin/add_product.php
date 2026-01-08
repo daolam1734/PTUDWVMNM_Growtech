@@ -28,6 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $storage = $_POST['storage'] ?? '';
     $gpu = $_POST['gpu'] ?? '';
     $screen = $_POST['screen'] ?? '';
+    $wifi = $_POST['wifi'] ?? '';
+    $bluetooth = $_POST['bluetooth'] ?? '';
     $os = $_POST['os'] ?? '';
     $weight = $_POST['weight'] ?? '';
     $battery = $_POST['battery'] ?? '';
@@ -70,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $destination = $uploadDir . $newFileName;
                 
                 if (move_uploaded_file($fileTmp, $destination)) {
-                    $uploadedImages[] = '/uploads/products/' . $newFileName;
+                    $uploadedImages[] = 'uploads/products/' . $newFileName;
                 }
             }
         }
@@ -91,8 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Insert specs
-        $stmt_specs = $pdo->prepare("INSERT INTO product_specifications (product_id, cpu, ram, storage, gpu, screen, os, weight, battery, ports) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt_specs->execute([$product_id, $cpu, $ram, $storage, $gpu, $screen, $os, $weight, $battery, $ports]);
+        $stmt_specs = $pdo->prepare("INSERT INTO product_specifications (product_id, cpu, ram, storage, gpu, screen, wifi, bluetooth, os, weight, battery, ports) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt_specs->execute([$product_id, $cpu, $ram, $storage, $gpu, $screen, $wifi, $bluetooth, $os, $weight, $battery, $ports]);
 
         $pdo->commit();
         set_flash("success", "Thêm sản phẩm thành công với " . count($uploadedImages) . " ảnh.");
@@ -175,43 +177,56 @@ require_once __DIR__ . '/includes/header.php';
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">CPU</label>
-                                        <input class="form-control" name="cpu" placeholder="Intel Core i5-12500H">
+                                        <input class="form-control" name="cpu" placeholder="Intel Core Ultra 7 255H...">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">RAM</label>
-                                        <input class="form-control" name="ram" placeholder="16GB DDR4 3200MHz">
+                                        <input class="form-control" name="ram" placeholder="32GB DDR5">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Ổ cứng</label>
-                                        <input class="form-control" name="storage" placeholder="512GB SSD NVMe">
+                                        <input class="form-control" name="storage" placeholder="512 GB PCIe Gen4 NVMe M.2 SSD">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Card đồ họa</label>
-                                        <input class="form-control" name="gpu" placeholder="RTX 3050 4GB">
+                                        <input class="form-control" name="gpu" placeholder="NVIDIA GeForce RTX 5070">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Màn hình</label>
+                                        <input class="form-control" name="screen" placeholder="16 inches">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label small fw-bold">Màn hình</label>
-                                        <input class="form-control" name="screen" placeholder="15.6 inch FHD 144Hz">
+                                        <label class="form-label small fw-bold">Trọng lượng</label>
+                                        <input class="form-control" name="weight" placeholder="2.43 kg">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Dung lượng Pin</label>
+                                        <input class="form-control" name="battery" placeholder="6-cell, 83 Wh Li-ion polymer">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Hệ điều hành</label>
                                         <input class="form-control" name="os" placeholder="Windows 11 Home">
                                     </div>
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold">Trọng lượng</label>
-                                        <input class="form-control" name="weight" placeholder="2.1 kg">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold">Pin</label>
-                                        <input class="form-control" name="battery" placeholder="3-cell, 52.5 Wh">
-                                    </div>
                                 </div>
+                                
                                 <div class="col-12">
-                                    <div class="mb-0">
-                                        <label class="form-label small fw-bold">Cổng kết nối</label>
-                                        <input class="form-control" name="ports" placeholder="1x USB-C, 3x USB-A, 1x HDMI">
+                                    <hr class="my-2 opacity-50">
+                                    <h6 class="fw-bold mb-3 mt-2 text-primary small text-uppercase" style="letter-spacing: 0.5px;">Cổng kết nối</h6>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label small fw-bold">Wi-Fi</label>
+                                            <input class="form-control" name="wifi" placeholder="Wi-Fi Intel Wi-Fi 6E AX211 (2x2)">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label small fw-bold">Bluetooth</label>
+                                            <input class="form-control" name="bluetooth" placeholder="Bluetooth 5.3">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small fw-bold">Cổng giao tiếp</label>
+                                            <textarea class="form-control" name="ports" rows="3" placeholder="2 x USB-C (Thunderbolt 4), 1 x USB-A, HDMI 2.1..."></textarea>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

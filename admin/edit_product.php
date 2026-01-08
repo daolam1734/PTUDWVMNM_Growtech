@@ -43,6 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $storage = $_POST['storage'] ?? '';
     $gpu = $_POST['gpu'] ?? '';
     $screen = $_POST['screen'] ?? '';
+    $wifi = $_POST['wifi'] ?? '';
+    $bluetooth = $_POST['bluetooth'] ?? '';
     $os = $_POST['os'] ?? '';
     $weight = $_POST['weight'] ?? '';
     $battery = $_POST['battery'] ?? '';
@@ -70,11 +72,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt_spec_check = $pdo->prepare("SELECT id FROM product_specifications WHERE product_id = ?");
         $stmt_spec_check->execute([$id]);
         if ($stmt_spec_check->fetch()) {
-            $stmt_spec_upd = $pdo->prepare("UPDATE product_specifications SET cpu=?, ram=?, storage=?, gpu=?, screen=?, os=?, weight=?, battery=?, ports=? WHERE product_id=?");
-            $stmt_spec_upd->execute([$cpu, $ram, $storage, $gpu, $screen, $os, $weight, $battery, $ports, $id]);
+            $stmt_spec_upd = $pdo->prepare("UPDATE product_specifications SET cpu=?, ram=?, storage=?, gpu=?, screen=?, wifi=?, bluetooth=?, os=?, weight=?, battery=?, ports=? WHERE product_id=?");
+            $stmt_spec_upd->execute([$cpu, $ram, $storage, $gpu, $screen, $wifi, $bluetooth, $os, $weight, $battery, $ports, $id]);
         } else {
-            $stmt_spec_ins = $pdo->prepare("INSERT INTO product_specifications (product_id, cpu, ram, storage, gpu, screen, os, weight, battery, ports) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt_spec_ins->execute([$id, $cpu, $ram, $storage, $gpu, $screen, $os, $weight, $battery, $ports]);
+            $stmt_spec_ins = $pdo->prepare("INSERT INTO product_specifications (product_id, cpu, ram, storage, gpu, screen, wifi, bluetooth, os, weight, battery, ports) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt_spec_ins->execute([$id, $cpu, $ram, $storage, $gpu, $screen, $wifi, $bluetooth, $os, $weight, $battery, $ports]);
+        }
+        
+        // Handle additional images upload
+        $uploadDir = __DIR__ . '/../uploads/products/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+        
+        if (!empty($_FILES['product_images']['name'][0])) {
+            $fileCount = count($_FILES['product_images']['name']);
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            $maxSize = 5 * 1024 * 1024;
+            
+            // Get current max position
+            $stmt_pos = $pdo->prepare("SELECT MAX(position) FROM product_images WHERE product_id = ?");
+            $stmt_pos->execute([$id]);
+            $max_pos = (int)$stmt_pos->fetchColumn();
+
+            $stmt_img_ins = $pdo->prepare("INSERT INTO product_images (product_id, url, position) VALUES (?, ?, ?)");
+            
+            for ($i = 0; $i < $fileCount; $i++) {
+                if ($_FILES['product_images']['error'][$i] === UPLOAD_ERR_OK) {
+                    $fileName = $_FILES['product_images']['name'][$i];
+                    $fileTmp = $_FILES['product_images']['tmp_name'][$i];
+                    $fileType = $_FILES['product_images']['type'][$i];
+                    
+                    if (in_array($fileType, $allowedTypes) && $_FILES['product_images']['size'][$i] <= $maxSize) {
+                        $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                        $newFileName = uniqid() . '_' . time() . '.' . $fileExt;
+                        if (move_uploaded_file($fileTmp, $uploadDir . $newFileName)) {
+                            $max_pos++;
+                            $stmt_img_ins->execute([$id, 'uploads/products/' . $newFileName, $max_pos]);
+                        }
+                    }
+                }
+            }
         }
         
         $pdo->commit();
@@ -110,7 +146,7 @@ require_once __DIR__ . '/includes/header.php';
             </div>
         <?php endif; ?>
 
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             <div class="row g-4">
                 <div class="col-lg-8">
                     <!-- Basic Info -->
@@ -172,29 +208,42 @@ require_once __DIR__ . '/includes/header.php';
                                         <label class="form-label small fw-bold">Card đồ họa</label>
                                         <input class="form-control" name="gpu" value="<?php echo htmlspecialchars($specs['gpu'] ?? ''); ?>">
                                     </div>
-                                </div>
-                                <div class="col-md-6">
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Màn hình</label>
                                         <input class="form-control" name="screen" value="<?php echo htmlspecialchars($specs['screen'] ?? ''); ?>">
                                     </div>
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold">Hệ điều hành</label>
-                                        <input class="form-control" name="os" value="<?php echo htmlspecialchars($specs['os'] ?? ''); ?>">
-                                    </div>
+                                </div>
+                                <div class="col-md-6">
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Trọng lượng</label>
                                         <input class="form-control" name="weight" value="<?php echo htmlspecialchars($specs['weight'] ?? ''); ?>">
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label small fw-bold">Pin</label>
+                                        <label class="form-label small fw-bold">Dung lượng Pin</label>
                                         <input class="form-control" name="battery" value="<?php echo htmlspecialchars($specs['battery'] ?? ''); ?>">
                                     </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Hệ điều hành</label>
+                                        <input class="form-control" name="os" value="<?php echo htmlspecialchars($specs['os'] ?? ''); ?>">
+                                    </div>
                                 </div>
+
                                 <div class="col-12">
-                                    <div class="mb-0">
-                                        <label class="form-label small fw-bold">Cổng kết nối</label>
-                                        <input class="form-control" name="ports" value="<?php echo htmlspecialchars($specs['ports'] ?? ''); ?>">
+                                    <hr class="my-2 opacity-50">
+                                    <h6 class="fw-bold mb-3 mt-2 text-primary small text-uppercase" style="letter-spacing: 0.5px;">Cổng kết nối</h6>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label small fw-bold">Wi-Fi</label>
+                                            <input class="form-control" name="wifi" value="<?php echo htmlspecialchars($specs['wifi'] ?? ''); ?>" placeholder="Wi-Fi Intel Wi-Fi 6E AX211 (2x2)">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label small fw-bold">Bluetooth</label>
+                                            <input class="form-control" name="bluetooth" value="<?php echo htmlspecialchars($specs['bluetooth'] ?? ''); ?>" placeholder="Bluetooth 5.3">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small fw-bold">Cổng giao tiếp</label>
+                                            <textarea class="form-control" name="ports" rows="3"><?php echo htmlspecialchars($specs['ports'] ?? ''); ?></textarea>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -262,12 +311,32 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                         <div class="card-body p-4">
                             <div class="mb-3">
-                                <label class="form-label small fw-bold">URL ảnh chính</label>
+                                <label class="form-label small fw-bold">Link Ảnh chính (URL)</label>
                                 <input class="form-control" name="image" value="<?php echo htmlspecialchars($current_image); ?>">
                             </div>
-                            <?php if ($current_image): ?>
-                                <div class="mt-2 text-center bg-light rounded-3 p-3">
-                                    <img src="<?php echo htmlspecialchars($current_image); ?>" alt="Preview" class="img-fluid rounded shadow-sm" style="max-height: 150px;">
+                            
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Tải lên ảnh mới (có thể chọn nhiều)</label>
+                                <input type="file" class="form-control" name="product_images[]" multiple accept="image/*">
+                            </div>
+
+                            <?php 
+                            $stmt_all_imgs = $pdo->prepare("SELECT * FROM product_images WHERE product_id = ? ORDER BY position ASC");
+                            $stmt_all_imgs->execute([$id]);
+                            $all_images = $stmt_all_imgs->fetchAll();
+                            
+                            if (!empty($all_images)): ?>
+                                <div class="row g-2 mt-2">
+                                    <?php foreach ($all_images as $img): 
+                                        $preview_url = (strpos($img['url'], 'http') === 0) ? $img['url'] : '../' . ltrim($img['url'], '/');
+                                    ?>
+                                        <div class="col-4 col-md-3">
+                                            <div class="position-relative border rounded p-1 bg-white">
+                                                <img src="<?php echo htmlspecialchars($preview_url); ?>" class="img-fluid rounded" style="height: 80px; width: 100%; object-fit: contain;">
+                                                <span class="position-absolute top-0 start-0 badge bg-dark opacity-75 m-1"><?php echo $img['position']; ?></span>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
                                 </div>
                             <?php endif; ?>
                         </div>
