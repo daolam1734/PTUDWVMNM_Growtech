@@ -11,42 +11,94 @@ if (empty($_SESSION['admin_logged_in'])) {
 $order_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 // Handle status update (Sync logic with orders.php)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['status'])) {
+    $id_to_update = (int)$_POST['order_id'];
     $new_status = $_POST['status'];
     
-    // Fetch current order data again to be safe
-    $stmt_check = $pdo->prepare("SELECT order_no, order_status, user_id FROM orders WHERE id = ?");
-    $stmt_check->execute([$order_id]);
-    $current_order = $stmt_check->fetch();
+    // Fetch current order info
+    $stmt_info = $pdo->prepare("SELECT order_no, order_status, payment_status, shipping_status, user_id FROM orders WHERE id = ?");
+    $stmt_info->execute([$id_to_update]);
+    $order_info = $stmt_info->fetch();
 
-    if ($current_order && $current_order['order_status'] !== $new_status) {
+    if ($order_info) {
+        $old_status = $order_info['order_status'];
+        $payment_status = $order_info['payment_status'];
+        $shipping_status = $order_info['shipping_status'];
+        $order_no = $order_info['order_no'];
+        $user_id = $order_info['user_id'];
+
+        if ($old_status === $new_status) {
+            header("Location: order_detail.php?id=$id_to_update");
+            exit;
+        }
+
         try {
             $pdo->beginTransaction();
-            $pdo->prepare("UPDATE orders SET order_status = ? WHERE id = ?")->execute([$new_status, $order_id]);
 
-            if ($new_status === 'CANCELLED') {
-                // Restore stock logic (simplified here, but important)
-                $stmt_it = $pdo->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ?");
-                $stmt_it->execute([$order_id]);
-                $items_to_restore = $stmt_it->fetchAll();
-                foreach ($items_to_restore as $it) {
-                    $pdo->prepare("UPDATE products SET stock = stock + ? WHERE id = ?")->execute([$it['quantity'], $it['product_id']]);
-                }
-                createNotification($current_order['user_id'], "Đơn hàng ".$current_order['order_no']." đã bị hủy", "Admin đã cập nhật trạng thái đơn hàng của bạn.", "order", "/weblaptop/orders.php");
+            // Logic for coordinated status updates
+            if ($new_status === 'COMPLETED') {
+                $payment_status = 'PAID';
+                $shipping_status = 'DELIVERED';
+            } elseif ($new_status === 'DELIVERED') {
+                $shipping_status = 'DELIVERED';
+            } elseif ($new_status === 'SHIPPING') {
+                $shipping_status = 'SHIPPING';
+            } elseif ($new_status === 'CANCELLED') {
+                $shipping_status = 'FAILED';
             }
 
-            if ($new_status === 'COMPLETED') {
-                $pdo->prepare("UPDATE orders SET payment_status = 'PAID' WHERE id = ?")->execute([$order_id]);
+            // 1. Update status
+            $stmt = $pdo->prepare("UPDATE orders SET order_status = ?, payment_status = ?, shipping_status = ?, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$new_status, $payment_status, $shipping_status, $id_to_update]);
+
+            // 2. Logic for Stock Restoration if CANCELLED
+            if ($new_status === 'CANCELLED' && $old_status !== 'CANCELLED') {
+                $stmtItems = $pdo->prepare("SELECT * FROM order_items WHERE order_id = ?");
+                $stmtItems->execute([$id_to_update]);
+                $items_list = $stmtItems->fetchAll();
+
+                $stmtStock = $pdo->prepare("UPDATE products SET stock = stock + ? WHERE id = ?");
+                $stmtMovement = $pdo->prepare("INSERT INTO stock_movements (product_id, change_qty, type, reference, note) VALUES (?, ?, 'restock', ?, 'Admin hủy đơn hàng (từ chi tiết)')");
+                
+                foreach ($items_list as $it) {
+                    $stmtStock->execute([$it['quantity'], $it['product_id']]);
+                    $stmtMovement->execute([$it['product_id'], $it['quantity'], $order_no]);
+                }
+
+                createNotification($user_id, "Đơn hàng $order_no đã bị hủy", "Admin đã hủy đơn hàng $order_no của bạn. Vui lòng liên hệ CSKH nếu có thắc mắc.", "order", "/weblaptop/orders.php");
+            }
+
+            // 3. Status-specific notifications
+            if ($new_status === 'SHIPPING') {
+                createNotification($user_id, "Đơn hàng $order_no đang giao", "Đơn hàng của bạn đã được giao cho đơn vị vận chuyển.", "order", "/weblaptop/orders.php");
+            } elseif ($new_status === 'DELIVERED') {
+                createNotification($user_id, "Đơn hàng $order_no đã giao", "Đơn hàng của bạn đã được giao thành công. Đừng quên đánh giá sản phẩm nhé!", "order", "/weblaptop/orders.php");
+            } elseif ($new_status === 'COMPLETED') {
+                createNotification($user_id, "Đơn hàng $order_no hoàn tất", "Cảm ơn bạn đã tin dùng sản phẩm của GrowTech. Đơn hàng đã hoàn tất.", "order", "/weblaptop/orders.php");
+            } elseif ($new_status === 'CONFIRMED') {
+                createNotification($user_id, "Đơn hàng $order_no đã xác nhận", "Đơn hàng của bạn đã được xác nhận và đang chờ đóng gói.", "order", "/weblaptop/orders.php");
             }
 
             $pdo->commit();
-            set_flash("success", "Cập nhật trạng thái thành công.");
+
+            $status_labels_sync = [
+                'PENDING' => 'Chờ xác nhận',
+                'CONFIRMED' => 'Đã xác nhận',
+                'PROCESSING' => 'Đang xử lý',
+                'SHIPPING' => 'Đang giao',
+                'DELIVERED' => 'Đã giao',
+                'COMPLETED' => 'Hoàn tất',
+                'CANCELLED' => 'Đã hủy'
+            ];
+            $readable_status = $status_labels_sync[$new_status] ?? $new_status;
+
+            set_flash("success", "Cập nhật trạng thái đơn hàng $order_no sang <b>$readable_status</b> thành công.");
         } catch (Exception $e) {
             $pdo->rollBack();
             set_flash("error", "Lỗi: " . $e->getMessage());
         }
     }
-    header("Location: order_detail.php?id=$order_id");
+    header("Location: order_detail.php?id=$id_to_update");
     exit;
 }
 
@@ -171,44 +223,53 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="d-flex gap-2">
                     <?php
                     $current = $order['order_status'];
-                    $next = null;
-                    $next_label = '';
-                    $btn_class = 'btn-primary';
-                    $icon = 'bi-check-circle';
-
+                    $next_options = [];
+                    
                     switch($current) {
                         case 'PENDING':
-                            $next = 'CONFIRMED'; $next_label = 'Xác nhận đơn'; break;
+                            $next_options = [
+                                'CONFIRMED' => ['Xác nhận đơn', 'bi-check-circle', 'btn-primary'],
+                                'CANCELLED' => ['Hủy đơn', 'bi-x-circle', 'btn-outline-danger']
+                            ];
+                            break;
                         case 'CONFIRMED':
-                            $next = 'PROCESSING'; $next_label = 'Bắt đầu đóng gói'; $icon = 'bi-box-seam'; break;
+                            $next_options = [
+                                'PROCESSING' => ['Đóng gói/Xử lý', 'bi-box-seam', 'btn-primary'],
+                                'CANCELLED' => ['Hủy đơn', 'bi-x-circle', 'btn-outline-danger']
+                            ];
+                            break;
                         case 'PROCESSING':
-                            $next = 'SHIPPING'; $next_label = 'Giao vận chuyển'; $icon = 'bi-truck'; break;
+                            $next_options = [
+                                'SHIPPING' => ['Giao vận chuyển', 'bi-truck', 'btn-primary'],
+                                'CANCELLED' => ['Hủy đơn', 'bi-x-circle', 'btn-outline-danger']
+                            ];
+                            break;
                         case 'SHIPPING':
-                            $next = 'DELIVERED'; $next_label = 'Xác nhận đã giao'; $icon = 'bi-house-check'; break;
+                            $next_options = [
+                                'DELIVERED' => ['Đã giao hàng', 'bi-house-check', 'btn-primary'],
+                                'CANCELLED' => ['Hủy đơn', 'bi-x-circle', 'btn-outline-danger']
+                            ];
+                            break;
                         case 'DELIVERED':
-                            $next = 'COMPLETED'; $next_label = 'Hoàn tất đơn'; $icon = 'bi-patch-check'; $btn_class = 'btn-success'; break;
+                            $next_options = [
+                                'COMPLETED' => ['Hoàn tất đơn', 'bi-shield-check', 'btn-success']
+                            ];
+                            break;
                     }
 
-                    if ($next):
+                    foreach ($next_options as $val => $data):
+                        $label = $data[0];
+                        $icon = $data[1];
+                        $btn_class = $data[2];
                     ?>
-                    <form method="POST" class="d-inline">
-                        <input type="hidden" name="action" value="update_status">
-                        <input type="hidden" name="status" value="<?php echo $next; ?>">
+                    <form method="POST" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn <?php echo $label; ?>?')">
+                        <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
+                        <input type="hidden" name="status" value="<?php echo $val; ?>">
                         <button type="submit" class="btn <?php echo $btn_class; ?> shadow-sm btn-sm px-4 rounded-pill fw-bold">
-                            <i class="bi <?php echo $icon; ?> me-2"></i> <?php echo $next_label; ?>
+                            <i class="bi <?php echo $icon; ?> me-2"></i> <?php echo $label; ?>
                         </button>
                     </form>
-                    <?php endif; ?>
-
-                    <?php if (!in_array($current, ['COMPLETED', 'CANCELLED', 'DELIVERED'])): ?>
-                    <form method="POST" class="d-inline" onsubmit="return confirm('Hủy đơn hàng này?')">
-                        <input type="hidden" name="action" value="update_status">
-                        <input type="hidden" name="status" value="CANCELLED">
-                        <button type="submit" class="btn btn-outline-danger shadow-sm btn-sm px-4 rounded-pill fw-bold">
-                            <i class="bi bi-x-circle me-2"></i> Hủy đơn
-                        </button>
-                    </form>
-                    <?php endif; ?>
+                    <?php endforeach; ?>
 
                     <button class="btn btn-white border border-secondary border-opacity-10 shadow-sm btn-sm px-4 rounded-pill fw-bold" onclick="window.print()">
                         <i class="bi bi-printer me-2"></i> In Hóa Đơn

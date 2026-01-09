@@ -248,8 +248,8 @@ if (!$product) {
                 <h2 class="section-title">Sản phẩm tương tự</h2>
                 <div class="row g-3">
                     <?php
-                    $stmt_related = $pdo->prepare("SELECT p.* FROM products p WHERE p.category_id = ? AND p.id != ? AND p.is_active = 1 LIMIT 4");
-                    $stmt_related->execute([$product['category_id'], $product['id']]);
+                    $stmt_related = $pdo->prepare("SELECT DISTINCT p.* FROM products p JOIN product_categories pc ON p.id = pc.product_id WHERE pc.category_id IN (SELECT category_id FROM product_categories WHERE product_id = ?) AND p.id != ? AND p.is_active = 1 LIMIT 4");
+                    $stmt_related->execute([$id, $id]);
                     $related = $stmt_related->fetchAll();
                     foreach ($related as $rp):
                     ?>

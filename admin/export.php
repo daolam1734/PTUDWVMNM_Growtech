@@ -85,10 +85,11 @@ if ($type === 'orders') {
     fputcsv($output, ['Sản phẩm', 'Danh mục', 'Số lượng đã bán', 'Doanh thu dự kiến']);
 
     $stmt = $pdo->query("
-        SELECT p.name, c.name as category_name, SUM(oi.quantity) as total_sold, SUM(oi.unit_price * oi.quantity) as total_revenue
+        SELECT p.name, GROUP_CONCAT(c.name SEPARATOR ', ') as category_name, SUM(oi.quantity) as total_sold, SUM(oi.unit_price * oi.quantity) as total_revenue
         FROM order_items oi
         JOIN products p ON oi.product_id = p.id
-        JOIN categories c ON p.category_id = c.id
+        LEFT JOIN product_categories pc ON p.id = pc.product_id
+        LEFT JOIN categories c ON pc.category_id = c.id
         JOIN orders o ON oi.order_id = o.id
         WHERE o.order_status NOT IN ('CANCELLED')
         GROUP BY p.id
@@ -133,10 +134,12 @@ if ($type === 'orders') {
     fputcsv($output, ['ID', 'Tên sản phẩm', 'Danh mục', 'Thương hiệu', 'Giá gốc', 'Giá khuyến mãi', 'Tồn kho']);
 
     $stmt = $pdo->query("
-        SELECT p.id, p.name, c.name as category_name, b.name as brand_name, p.price, p.sale_price, p.stock
+        SELECT p.id, p.name, GROUP_CONCAT(c.name SEPARATOR ', ') as category_name, b.name as brand_name, p.price, p.sale_price, p.stock
         FROM products p
-        LEFT JOIN categories c ON p.category_id = c.id
+        LEFT JOIN product_categories pc ON p.id = pc.product_id
+        LEFT JOIN categories c ON pc.category_id = c.id
         LEFT JOIN brands b ON p.brand_id = b.id
+        GROUP BY p.id
         ORDER BY p.id DESC
     ");
 

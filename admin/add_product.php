@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sku = $_POST['sku'] ?? '';
     $slug = $_POST['slug'] ?: slugify($name);
     $brand_id = $_POST['brand_id'] ?: null;
-    $category_id = $_POST['category_id'] ?: null;
+    $category_ids = $_POST['category_ids'] ?? [];
     $short_desc = $_POST['short_description'] ?? '';
     $desc = $_POST['description'] ?? '';
     $price = (float)$_POST['price'];
@@ -42,37 +42,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mkdir($uploadDir, 0755, true);
     }
     
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    $maxSize = 5 * 1024 * 1024; // 5MB
+
     if (!empty($_FILES['product_images']['name'][0])) {
         $fileCount = count($_FILES['product_images']['name']);
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        $maxSize = 5 * 1024 * 1024; // 5MB
-        
         for ($i = 0; $i < $fileCount; $i++) {
             if ($_FILES['product_images']['error'][$i] === UPLOAD_ERR_OK) {
                 $fileName = $_FILES['product_images']['name'][$i];
                 $fileTmp = $_FILES['product_images']['tmp_name'][$i];
-                $fileSize = $_FILES['product_images']['size'][$i];
                 $fileType = $_FILES['product_images']['type'][$i];
                 
-                // Validate file type
-                if (!in_array($fileType, $allowedTypes)) {
-                    $error = "File {$fileName} không phải định dạng ảnh hợp lệ (JPEG, PNG, GIF, WEBP).";
-                    continue;
-                }
-                
-                // Validate file size
-                if ($fileSize > $maxSize) {
-                    $error = "File {$fileName} vượt quá kích thước cho phép (5MB).";
-                    continue;
-                }
-                
-                // Generate unique filename
-                $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                $newFileName = uniqid() . '_' . time() . '.' . $fileExt;
-                $destination = $uploadDir . $newFileName;
-                
-                if (move_uploaded_file($fileTmp, $destination)) {
-                    $uploadedImages[] = 'uploads/products/' . $newFileName;
+                if (in_array($fileType, $allowedTypes) && $_FILES['product_images']['size'][$i] <= $maxSize) {
+                    $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                    $newFileName = uniqid() . '_' . time() . '.' . $fileExt;
+                    if (move_uploaded_file($fileTmp, $uploadDir . $newFileName)) {
+                        $uploadedImages[] = 'uploads/products/' . $newFileName;
+                    }
                 }
             }
         }
@@ -80,16 +66,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $pdo->beginTransaction();
     try {
-        $stmt = $pdo->prepare("INSERT INTO products (sku, name, slug, brand_id, category_id, short_description, description, price, sale_price, stock, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$sku, $name, $slug, $brand_id, $category_id, $short_desc, $desc, $price, $sale_price, $stock, $is_active]);
+        $stmt = $pdo->prepare("INSERT INTO products (sku, name, slug, brand_id, short_description, description, price, sale_price, stock, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$sku, $name, $slug, $brand_id, $short_desc, $desc, $price, $sale_price, $stock, $is_active]);
         $product_id = $pdo->lastInsertId();
-        
-        // Insert uploaded images
-        if (!empty($uploadedImages)) {
-            $stmt_img = $pdo->prepare("INSERT INTO product_images (product_id, url, position) VALUES (?, ?, ?)");
-            foreach ($uploadedImages as $position => $imageUrl) {
-                $stmt_img->execute([$product_id, $imageUrl, $position]);
+
+        // Insert multiple categories
+        if (!empty($category_ids)) {
+            $stmt_pc = $pdo->prepare("INSERT INTO product_categories (product_id, category_id) VALUES (?, ?)");
+            foreach ($category_ids as $cat_id) {
+                $stmt_pc->execute([$product_id, $cat_id]);
             }
+        }
+        
+        $stmt_img = $pdo->prepare("INSERT INTO product_images (product_id, url, position) VALUES (?, ?, ?)");
+        
+        // Insert images (first one as main)
+        foreach ($uploadedImages as $idx => $imageUrl) {
+            $stmt_img->execute([$product_id, $imageUrl, $idx]);
         }
 
         // Insert specs
@@ -97,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt_specs->execute([$product_id, $cpu, $ram, $storage, $gpu, $screen, $wifi, $bluetooth, $os, $weight, $battery, $ports]);
 
         $pdo->commit();
-        set_flash("success", "Thêm sản phẩm thành công với " . count($uploadedImages) . " ảnh.");
+        set_flash("success", "Thêm sản phẩm thành công.");
         header('Location: products.php'); exit;
     } catch (Exception $e) {
         $pdo->rollBack();
@@ -242,13 +235,17 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                         <div class="card-body p-4">
                             <div class="mb-3">
-                                <label class="form-label small fw-bold">Danh mục</label>
-                                <select class="form-select" name="category_id">
-                                    <option value="">-- Chọn danh mục --</option>
+                                <label class="form-label small fw-bold">Danh mục (Chọn nhiều)</label>
+                                <div class="border rounded p-3 bg-light-subtle" style="max-height: 200px; overflow-y: auto;">
                                     <?php foreach ($categories as $cat): ?>
-                                        <option value="<?php echo $cat['id']; ?>"><?php echo htmlspecialchars($cat['name']); ?></option>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="category_ids[]" value="<?php echo $cat['id']; ?>" id="cat_<?php echo $cat['id']; ?>">
+                                            <label class="form-check-label small" for="cat_<?php echo $cat['id']; ?>">
+                                                <?php echo htmlspecialchars($cat['name']); ?>
+                                            </label>
+                                        </div>
                                     <?php endforeach; ?>
-                                </select>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold">Thương hiệu</label>
@@ -294,10 +291,10 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                         <div class="card-body p-4">
                             <div class="mb-3">
-                                <label class="form-label small fw-bold">Chọn ảnh sản phẩm (có thể chọn nhiều)</label>
-                                <input type="file" class="form-control" name="product_images[]" id="product_images" multiple accept="image/*">
+                                <label class="form-label small fw-bold">Chọn ảnh sản phẩm <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" name="product_images[]" id="product_images" multiple accept="image/*" required>
                                 <div class="form-text x-small mt-2">
-                                    <i class="bi bi-info-circle"></i> Định dạng: JPG, PNG, GIF, WEBP. Tối đa: 5MB/ảnh.
+                                    <i class="bi bi-info-circle"></i> Ảnh đầu tiên sẽ được chọn làm ảnh chính.
                                 </div>
                             </div>
                             <div id="image_preview" class="row g-2"></div>
@@ -336,8 +333,6 @@ function updatePreviewAndInput() {
     const dt = new DataTransfer();
     
     selectedFiles.forEach((file, index) => {
-        if (!file.type.startsWith('image/')) return;
-        
         dt.items.add(file);
         
         const reader = new FileReader();
@@ -350,7 +345,9 @@ function updatePreviewAndInput() {
                     <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle" onclick="removeImage(${index})" style="width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; border: 2px solid white;">
                         <i class="bi bi-x"></i>
                     </button>
-                    <div class="badge bg-dark bg-opacity-50 position-absolute bottom-0 start-0 m-1 small">Ảnh ${index + 1}</div>
+                    <div class="badge ${index === 0 ? 'bg-primary' : 'bg-dark bg-opacity-50'} position-absolute bottom-0 start-0 m-1 small">
+                        ${index === 0 ? 'Ảnh chính' : 'Ảnh ' + (index + 1)}
+                    </div>
                 </div>
             `;
             preview.appendChild(col);
