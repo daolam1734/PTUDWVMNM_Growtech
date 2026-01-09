@@ -30,7 +30,7 @@ if ($q !== '') {
 }
 
 if ($category_slug !== '') {
-    $where[] = "c.slug = ?";
+    $where[] = "EXISTS (SELECT 1 FROM product_categories pc JOIN categories c_filter ON pc.category_id = c_filter.id WHERE pc.product_id = p.id AND c_filter.slug = ?)";
     $params[] = $category_slug;
 }
 
@@ -89,7 +89,6 @@ $where_sql = implode(" AND ", $where);
 $stmt_count = $pdo->prepare("SELECT COUNT(DISTINCT p.id) 
     FROM products p 
     LEFT JOIN brands b ON b.id = p.brand_id
-    LEFT JOIN categories c ON c.id = p.category_id
     LEFT JOIN product_specifications ps ON ps.product_id = p.id
     WHERE $where_sql");
 $stmt_count->execute($params);
@@ -99,7 +98,6 @@ $total_products = $stmt_count->fetchColumn();
 $sql = "SELECT p.*, b.name as brand_name, pi.url as image_url, ps.cpu, ps.ram, ps.storage, ps.screen
     FROM products p
     LEFT JOIN brands b ON b.id = p.brand_id
-    LEFT JOIN categories c ON c.id = p.category_id
     LEFT JOIN product_specifications ps ON ps.product_id = p.id
     LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.position = 0
     WHERE $where_sql

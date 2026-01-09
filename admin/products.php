@@ -14,9 +14,10 @@ $stock_status = $_GET['stock'] ?? '';
 $brand = $_GET['brand'] ?? '';
 
 $sql = "
-  SELECT p.*, c.name as category_name, b.name as brand_name 
+  SELECT p.*, GROUP_CONCAT(c.name SEPARATOR ', ') as category_name, b.name as brand_name 
   FROM products p 
-  LEFT JOIN categories c ON p.category_id = c.id 
+  LEFT JOIN product_categories pc ON p.id = pc.product_id
+  LEFT JOIN categories c ON pc.category_id = c.id 
   LEFT JOIN brands b ON p.brand_id = b.id 
   WHERE 1=1
 ";
@@ -30,7 +31,7 @@ if ($search) {
 }
 
 if ($category) {
-    $sql .= " AND p.category_id = ?";
+    $sql .= " AND EXISTS (SELECT 1 FROM product_categories pc2 WHERE pc2.product_id = p.id AND pc2.category_id = ?)";
     $params[] = $category;
 }
 
@@ -44,6 +45,8 @@ if ($stock_status === 'out') {
 } elseif ($stock_status === 'low') {
     $sql .= " AND p.stock > 0 AND p.stock < 10";
 }
+
+$sql .= " GROUP BY p.id";
 
 // Pagination setup
 $items_per_page = 10;
@@ -326,7 +329,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <div class="d-flex align-items-center">
                                     <div class="position-relative me-3">
                                         <div class="bg-light rounded-3 p-1 border">
-                                            <img src="<?php echo htmlspecialchars($img); ?>" class="product-img" onerror="this.src='../assets/images/no-image.png'">
+                                            <img src="<?php echo htmlspecialchars($img); ?>" class="product-img" onerror="this.src='https://placehold.co/100x100?text=No+Image'">
                                         </div>
                                         <?php if ($p['sale_price'] && $p['sale_price'] < $p['price']): ?>
                                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-circle bg-danger p-1 border border-white" style="width: 18px; height: 18px;"><i class="bi bi-lightning-fill" style="font-size: 10px;"></i></span>

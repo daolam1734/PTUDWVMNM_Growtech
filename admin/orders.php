@@ -14,16 +14,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['s
     $new_status = $_POST['status'];
     
     // Fetch current order info
-    $stmt_info = $pdo->prepare("SELECT order_no, order_status, user_id FROM orders WHERE id = ?");
+    $stmt_info = $pdo->prepare("SELECT order_no, order_status, payment_status, shipping_status, user_id FROM orders WHERE id = ?");
     $stmt_info->execute([$order_id]);
     $order = $stmt_info->fetch();
 
     if ($order) {
         $old_status = $order['order_status'];
+        $payment_status = $order['payment_status'];
+        $shipping_status = $order['shipping_status'];
         $order_no = $order['order_no'];
         $user_id = $order['user_id'];
 
-        // Logic check: Avoid redundant updates
         if ($old_status === $new_status) {
             header("Location: orders.php");
             exit;
@@ -32,9 +33,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['s
         try {
             $pdo->beginTransaction();
 
-            // 1. Update status
-            $stmt = $pdo->prepare("UPDATE orders SET order_status = ? WHERE id = ?");
-            $stmt->execute([$new_status, $order_id]);
+            // Logic for coordinated status updates
+            if ($new_status === 'COMPLETED') {
+                $payment_status = 'PAID';
+                $shipping_status = 'DELIVERED';
+            } elseif ($new_status === 'DELIVERED') {
+                $shipping_status = 'DELIVERED';
+            } elseif ($new_status === 'SHIPPING') {
+                $shipping_status = 'SHIPPING';
+            } elseif ($new_status === 'CANCELLED') {
+                $shipping_status = 'FAILED';
+            }
+
+            // 1. Update order
+            $stmt = $pdo->prepare("UPDATE orders SET order_status = ?, payment_status = ?, shipping_status = ?, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$new_status, $payment_status, $shipping_status, $order_id]);
 
             // 2. Logic for Stock Restoration if CANCELLED
             if ($new_status === 'CANCELLED' && $old_status !== 'CANCELLED') {
@@ -53,15 +66,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['s
                 createNotification($user_id, "Đơn hàng $order_no đã bị hủy", "Admin đã hủy đơn hàng $order_no của bạn. Vui lòng liên hệ CSKH nếu có thắc mắc.", "order", "/weblaptop/orders.php");
             }
 
-            // 3. Update payment status if COMPLETED
-            if ($new_status === 'COMPLETED') {
-                $pdo->prepare("UPDATE orders SET payment_status = 'PAID' WHERE id = ?")->execute([$order_id]);
-                createNotification($user_id, "Đơn hàng $order_no hoàn tất", "Cảm ơn bạn đã tin dùng sản phẩm của GrowTech. Đơn hàng đã được giao thành công.", "order", "/weblaptop/orders.php");
-            }
-
-            // 4. Notification for shipping
+            // 3. Status-specific notifications
             if ($new_status === 'SHIPPING') {
                 createNotification($user_id, "Đơn hàng $order_no đang giao", "Đơn hàng của bạn đã được giao cho đơn vị vận chuyển.", "order", "/weblaptop/orders.php");
+            } elseif ($new_status === 'DELIVERED') {
+                createNotification($user_id, "Đơn hàng $order_no đã giao", "Đơn hàng của bạn đã được giao thành công. Đừng quên đánh giá sản phẩm nhé!", "order", "/weblaptop/orders.php");
+            } elseif ($new_status === 'COMPLETED') {
+                createNotification($user_id, "Đơn hàng $order_no hoàn tất", "Cảm ơn bạn đã tin dùng sản phẩm của GrowTech. Đơn hàng đã hoàn tất.", "order", "/weblaptop/orders.php");
+            } elseif ($new_status === 'CONFIRMED') {
+                createNotification($user_id, "Đơn hàng $order_no đã xác nhận", "Đơn hàng của bạn đã được xác nhận và đang chờ đóng gói.", "order", "/weblaptop/orders.php");
             }
 
             $pdo->commit();
@@ -80,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['s
             set_flash("success", "Cập nhật trạng thái đơn hàng $order_no sang <b>$readable_status</b> thành công.");
         } catch (Exception $e) {
             $pdo->rollBack();
-            set_flash("error", "Lỗi log: " . $e->getMessage());
+            set_flash("error", "Lỗi: " . $e->getMessage());
         }
     } else {
         set_flash("error", "Không tìm thấy đơn hàng.");

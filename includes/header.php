@@ -835,8 +835,13 @@ $menu_categories = $stmt_menu_cats->fetchAll();
                       <?php foreach ($menu_brands as $b): ?>
                         <div class="col-4">
                           <a class="megamenu-brand-item" href="/weblaptop/search.php?brand=<?php echo urlencode($b['name']); ?>">
-                            <?php if ($b['logo']): ?>
-                              <img src="<?php echo htmlspecialchars($b['logo']); ?>" alt="<?php echo htmlspecialchars($b['name']); ?>">
+                            <?php if ($b['logo']): 
+                              $logo_url = $b['logo'];
+                              if (strpos($logo_url, 'http') !== 0) {
+                                  $logo_url = BASE_URL . ltrim($logo_url, '/');
+                              }
+                            ?>
+                              <img src="<?php echo htmlspecialchars($logo_url); ?>" alt="<?php echo htmlspecialchars($b['name']); ?>">
                             <?php else: ?>
                               <div class="mb-2" style="color: var(--tet-red);"><i class="bi bi-tag-fill" style="font-size: 24px;"></i></div>
                             <?php endif; ?>

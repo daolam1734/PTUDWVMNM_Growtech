@@ -27,7 +27,7 @@ if ($is_filtered) {
         $params[] = "%$q%";
     }
     if ($category_slug) {
-        $sql .= " AND p.category_id IN (SELECT id FROM categories WHERE slug = ?)";
+        $sql .= " AND EXISTS (SELECT 1 FROM product_categories pc JOIN categories c_filter ON pc.category_id = c_filter.id WHERE pc.product_id = p.id AND c_filter.slug = ?)";
         $params[] = $category_slug;
     }
     if (!empty($selected_brands)) {
@@ -459,7 +459,7 @@ if ($is_filtered) {
             <!-- Category Sliders -->
             <?php
             // Get top 3 categories that have products
-            $stmt_cat_sliders = $pdo->query("SELECT c.* FROM categories c WHERE EXISTS (SELECT 1 FROM products p WHERE p.category_id = c.id AND p.is_active = 1) LIMIT 3");
+            $stmt_cat_sliders = $pdo->query("SELECT c.* FROM categories c WHERE EXISTS (SELECT 1 FROM product_categories pc JOIN products p2 ON pc.product_id = p2.id WHERE pc.category_id = c.id AND p2.is_active = 1) LIMIT 3");
             while ($cat = $stmt_cat_sliders->fetch()):
             ?>
                 <div class="mb-5">
@@ -472,7 +472,7 @@ if ($is_filtered) {
                         <div class="scroll-btn scroll-btn-right"><i class="bi bi-chevron-right"></i></div>
                         <div class="scroll-container">
                             <?php
-                            $stmt_cat_p = $pdo->prepare("SELECT p.id, p.name, p.price FROM products p WHERE p.category_id = ? AND p.is_active = 1 GROUP BY p.id LIMIT 15");
+                            $stmt_cat_p = $pdo->prepare("SELECT p.id, p.name, p.price FROM products p JOIN product_categories pc ON p.id = pc.product_id WHERE pc.category_id = ? AND p.is_active = 1 GROUP BY p.id LIMIT 15");
                             $stmt_cat_p->execute([$cat["id"]]);
                             while ($p = $stmt_cat_p->fetch()):
                                 $img = getProductImage($p['id']);

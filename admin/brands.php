@@ -235,9 +235,14 @@ require_once __DIR__ . '/includes/header.php';
                                     <tr>
                                         <td class="ps-4 text-muted small">#<?php echo $b['id']; ?></td>
                                         <td>
-                                            <?php if ($b['logo']): ?>
+                                            <?php if ($b['logo']): 
+                                                $logo_url = $b['logo'];
+                                                if (strpos($logo_url, 'http') !== 0) {
+                                                    $logo_url = BASE_URL . ltrim($logo_url, '/');
+                                                }
+                                            ?>
                                                 <div class="bg-white border rounded p-1 d-flex align-items-center justify-content-center shadow-sm" style="width: 60px; height: 40px;">
-                                                    <img src="<?php echo htmlspecialchars($b['logo']); ?>" style="max-height: 100%; max-width: 100%; object-fit: contain;" onerror="this.src='https://placehold.co/100x50?text=LOGO'">
+                                                    <img src="<?php echo htmlspecialchars($logo_url); ?>" style="max-height: 100%; max-width: 100%; object-fit: contain;" onerror="this.src='https://placehold.co/100x50?text=LOGO'">
                                                 </div>
                                             <?php else: ?>
                                                 <div class="bg-light border rounded text-muted x-small d-flex align-items-center justify-content-center" style="width: 60px; height: 40px;">N/A</div>
@@ -289,123 +294,89 @@ require_once __DIR__ . '/includes/header.php';
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Edit Brand
-    document.querySelectorAll('.edit-brand-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            const name = this.getAttribute('data-name');
-            const logo = this.getAttribute('data-logo');
+    const BASE_URL = '<?php echo BASE_URL; ?>';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Edit Brand
+        document.querySelectorAll('.edit-brand-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name');
+                const logo = this.getAttribute('data-logo');
 
-            document.getElementById('form-title').innerHTML = '<i class="bi bi-pencil-square me-2 text-warning"></i>Sửa thương hiệu';
-            document.getElementById('brand_id').value = id;
-            document.getElementById('brand_name').value = name;
-            document.getElementById('existing_logo').value = logo;
-            document.getElementById('submit-btn').name = 'update_brand';
-            document.getElementById('submit-btn').innerHTML = '<i class="bi bi-check-circle me-2"></i>Cập nhật';
-            document.getElementById('cancel-btn').classList.remove('d-none');
+                document.getElementById('form-title').innerHTML = '<i class="bi bi-pencil-square me-2 text-warning"></i>Sửa thương hiệu';
+                document.getElementById('brand_id').value = id;
+                document.getElementById('brand_name').value = name;
+                document.getElementById('existing_logo').value = logo;
+                document.getElementById('submit-btn').name = 'update_brand';
+                document.getElementById('submit-btn').innerHTML = '<i class="bi bi-check-circle me-2"></i>Cập nhật';
+                document.getElementById('cancel-btn').classList.remove('d-none');
 
-            if (logo) {
-                document.getElementById('logo-preview').src = logo;
-                document.getElementById('logo-preview-container').classList.remove('d-none');
-                
-                if (logo.startsWith('http')) {
-                    const urlTabTrigger = document.querySelector('button[data-bs-target="#url-tab"]');
-                    const tab = new bootstrap.Tab(urlTabTrigger);
-                    tab.show();
-                    document.getElementById('brand_logo_url').value = logo;
+                if (logo) {
+                    // Normalize preview URL
+                    let previewUrl = logo;
+                    if (logo.indexOf('http') !== 0) {
+                        previewUrl = BASE_URL + logo.replace(/^\//, '');
+                    }
+                    document.getElementById('logo-preview').src = previewUrl;
+                    document.getElementById('logo-preview-container').classList.remove('d-none');
+                    
+                    if (logo.startsWith('http')) {
+                        const urlTabTrigger = document.querySelector('button[data-bs-target="#url-tab"]');
+                        if (urlTabTrigger) {
+                            const tab = new bootstrap.Tab(urlTabTrigger);
+                            tab.show();
+                        }
+                        document.getElementById('brand_logo_url').value = logo;
+                    } else {
+                        const uploadTabTrigger = document.querySelector('button[data-bs-target="#upload-tab"]');
+                        if (uploadTabTrigger) {
+                            const tab = new bootstrap.Tab(uploadTabTrigger);
+                            tab.show();
+                        }
+                    }
                 } else {
-                    const uploadTabTrigger = document.querySelector('button[data-bs-target="#upload-tab"]');
-                    const tab = new bootstrap.Tab(uploadTabTrigger);
-                    tab.show();
+                    document.getElementById('logo-preview-container').classList.add('d-none');
                 }
-            } else {
-                document.getElementById('logo-preview-container').classList.add('d-none');
-            }
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
         });
-    });
 
-    // Cancel Edit
-    document.getElementById('cancel-btn').addEventListener('click', function() {
-        document.getElementById('form-title').innerHTML = '<i class="bi bi-plus-circle me-2 text-primary"></i>Thêm thương hiệu mới';
-        document.getElementById('brand_id').value = '0';
-        document.getElementById('brand-form').reset();
-        document.getElementById('existing_logo').value = '';
-        document.getElementById('submit-btn').name = 'add_brand';
-        document.getElementById('submit-btn').innerHTML = '<i class="bi bi-save me-2"></i>Lưu thương hiệu';
-        document.getElementById('logo-preview-container').classList.add('d-none');
-        this.classList.add('d-none');
-    });
+        // Cancel Edit
+        document.getElementById('cancel-btn').addEventListener('click', function() {
+            document.getElementById('form-title').innerHTML = '<i class="bi bi-plus-circle me-2 text-primary"></i>Thêm thương hiệu mới';
+            document.getElementById('brand_id').value = '0';
+            document.getElementById('brand-form').reset();
+            document.getElementById('existing_logo').value = '';
+            document.getElementById('submit-btn').name = 'add_brand';
+            document.getElementById('submit-btn').innerHTML = '<i class="bi bi-save me-2"></i>Lưu thương hiệu';
+            document.getElementById('logo-preview-container').classList.add('d-none');
+            this.classList.add('d-none');
+        });
 
-    // Preview image locally
-    document.getElementById('logo_file').addEventListener('change', function(e) {
-        if (e.target.files && e.target.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(ex) {
-                document.getElementById('logo-preview').src = ex.target.result;
-                document.getElementById('logo-preview-container').classList.remove('d-none');
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        }
-    });
-
-    // Delete confirmation
-    document.querySelectorAll('.delete-confirm').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            if(!confirm('Bạn có chắc muốn xóa thương hiệu này? Thao tác không thể hoàn tác!')) {
-                e.preventDefault();
+        // Preview image locally
+        document.getElementById('logo_file').addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(ex) {
+                    document.getElementById('logo-preview').src = ex.target.result;
+                    document.getElementById('logo-preview-container').classList.remove('d-none');
+                };
+                reader.readAsDataURL(e.target.files[0]);
             }
         });
+
+        // Delete confirmation
+        document.querySelectorAll('.delete-confirm').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                if(!confirm('Bạn có chắc muốn xóa thương hiệu này? Thao tác không thể hoàn tác!')) {
+                    e.preventDefault();
+                }
+            });
+        });
     });
-});
 </script>
 </div>
-
-<script>
-document.querySelectorAll('.edit-brand-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const id = this.getAttribute('data-id');
-        const name = this.getAttribute('data-name');
-        const logo = this.getAttribute('data-logo');
-
-        document.getElementById('form-title').innerHTML = '<i class="bi bi-pencil-square me-2 text-warning"></i>Sửa thương hiệu';
-        document.getElementById('brand_id').value = id;
-        document.getElementById('brand_name').value = name;
-        document.getElementById('existing_logo').value = logo;
-        document.getElementById('submit-btn').name = 'update_brand';
-        document.getElementById('submit-btn').innerHTML = '<i class="bi bi-check-circle me-2"></i>Cập nhật';
-        document.getElementById('cancel-btn').classList.remove('d-none');
-
-        if (logo) {
-            document.getElementById('logo-preview').src = logo;
-            document.getElementById('logo-preview-container').classList.remove('d-none');
-            
-            // If it's a URL, switch to URL tab
-            if (logo.startsWith('http')) {
-                const urlTab = document.querySelector('[data-bs-target="#url-tab"]');
-                bootstrap.Tab.getInstance(urlTab).show();
-                document.getElementById('brand_logo_url').value = logo;
-            }
-        } else {
-            document.getElementById('logo-preview-container').classList.add('d-none');
-        }
-        
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-});
-
-document.getElementById('cancel-btn').addEventListener('click', function() {
-    document.getElementById('form-title').innerHTML = '<i class="bi bi-plus-circle me-2 text-primary"></i>Thêm thương hiệu mới';
-    document.getElementById('brand_id').value = '0';
-    document.getElementById('brand-form').reset();
-    document.getElementById('existing_logo').value = '';
-    document.getElementById('submit-btn').name = 'add_brand';
-    document.getElementById('submit-btn').innerHTML = '<i class="bi bi-save me-2"></i>Lưu thương hiệu';
-    document.getElementById('logo-preview-container').classList.add('d-none');
-    this.classList.add('d-none');
-});
-</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

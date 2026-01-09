@@ -12,6 +12,11 @@ $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?"); $stmt->execute([$id]); $p = $stmt->fetch();
 if (!$p) { set_flash("error", "Không tìm thấy sản phẩm."); header('Location: products.php'); exit; }
 
+// Get current categories
+$stmt_curr_cats = $pdo->prepare("SELECT category_id FROM product_categories WHERE product_id = ?");
+$stmt_curr_cats->execute([$id]);
+$current_category_ids = $stmt_curr_cats->fetchAll(PDO::FETCH_COLUMN);
+
 // Get current image
 $stmt_img = $pdo->prepare("SELECT url FROM product_images WHERE product_id = ? AND position = 0");
 $stmt_img->execute([$id]);
@@ -22,19 +27,76 @@ $stmt_specs = $pdo->prepare("SELECT * FROM product_specifications WHERE product_
 $stmt_specs->execute([$id]);
 $specs = $stmt_specs->fetch() ?: [];
 
+// Handle image deletion
+if (isset($_GET['delete_image_id'])) {
+    $del_img_id = (int)$_GET['delete_image_id'];
+    $stmt_sel = $pdo->prepare("SELECT url FROM product_images WHERE id = ? AND product_id = ?");
+    $stmt_sel->execute([$del_img_id, $id]);
+    $del_img_url = $stmt_sel->fetchColumn();
+    
+    if ($del_img_url) {
+        $file_path = __DIR__ . '/../' . ltrim($del_img_url, '/');
+        if (file_exists($file_path) && is_file($file_path)) {
+            unlink($file_path);
+        }
+        $stmt_del = $pdo->prepare("DELETE FROM product_images WHERE id = ?");
+        $stmt_del->execute([$del_img_id]);
+        set_flash("success", "Đã xóa ảnh.");
+    }
+    header("Location: edit_product.php?id=$id");
+    exit;
+}
+
+// Handle setting main image
+if (isset($_GET['set_main_id'])) {
+    $set_main_id = (int)$_GET['set_main_id'];
+    
+    // Get target image position
+    $stmt_target = $pdo->prepare("SELECT position FROM product_images WHERE id = ? AND product_id = ?");
+    $stmt_target->execute([$set_main_id, $id]);
+    $target_pos = $stmt_target->fetchColumn();
+    
+    if ($target_pos !== false) {
+        $pdo->beginTransaction();
+        try {
+            // Find current main image
+            $stmt_old_main = $pdo->prepare("SELECT id FROM product_images WHERE product_id = ? AND position = 0");
+            $stmt_old_main->execute([$id]);
+            $old_main_id = $stmt_old_main->fetchColumn();
+            
+            if ($old_main_id && $old_main_id != $set_main_id) {
+                // Move old main image to target's old position
+                $stmt_upd_old = $pdo->prepare("UPDATE product_images SET position = ? WHERE id = ?");
+                $stmt_upd_old->execute([$target_pos, $old_main_id]);
+            }
+            
+            // Set target as main
+            $stmt_upd_new = $pdo->prepare("UPDATE product_images SET position = 0 WHERE id = ?");
+            $stmt_upd_new->execute([$set_main_id]);
+            
+            $pdo->commit();
+            set_flash("success", "Đã đổi ảnh chính.");
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            set_flash("error", "Lỗi: " . $e->getMessage());
+        }
+    }
+    header("Location: edit_product.php?id=$id");
+    exit;
+}
+
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'] ?? '';
     $sku = $_POST['sku'] ?? '';
     $slug = $_POST['slug'] ?: slugify($name);
     $brand_id = $_POST['brand_id'] ?: null;
-    $category_id = $_POST['category_id'] ?: null;
+    $category_ids = $_POST['category_ids'] ?? [];
     $short_desc = $_POST['short_description'] ?? '';
     $desc = $_POST['description'] ?? '';
     $price = (float)$_POST['price'];
     $sale_price = $_POST['sale_price'] ? (float)$_POST['sale_price'] : null;
     $stock = (int)$_POST['stock'];
-    $image = $_POST['image'] ?? '';
     $is_active = isset($_POST['is_active']) ? 1 : 0;
 
     // Specs
@@ -52,46 +114,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $pdo->beginTransaction();
     try {
-        $stmt = $pdo->prepare("UPDATE products SET sku=?, name=?, slug=?, brand_id=?, category_id=?, short_description=?, description=?, price=?, sale_price=?, stock=?, is_active=? WHERE id=?");
-        $stmt->execute([$sku, $name, $slug, $brand_id, $category_id, $short_desc, $desc, $price, $sale_price, $stock, $is_active, $id]);
+        $stmt = $pdo->prepare("UPDATE products SET sku=?, name=?, slug=?, brand_id=?, short_description=?, description=?, price=?, sale_price=?, stock=?, is_active=? WHERE id=?");
+        $stmt->execute([$sku, $name, $slug, $brand_id, $short_desc, $desc, $price, $sale_price, $stock, $is_active, $id]);
         
-        // Update or insert image
-        $stmt_check = $pdo->prepare("SELECT id FROM product_images WHERE product_id = ? AND position = 0");
-        $stmt_check->execute([$id]);
-        $img_id = $stmt_check->fetchColumn();
-        
-        if ($img_id) {
-            $stmt_upd = $pdo->prepare("UPDATE product_images SET url = ? WHERE id = ?");
-            $stmt_upd->execute([$image, $img_id]);
-        } elseif ($image) {
-            $stmt_ins = $pdo->prepare("INSERT INTO product_images (product_id, url, position) VALUES (?, ?, 0)");
-            $stmt_ins->execute([$id, $image]);
+        // Update categories
+        $pdo->prepare("DELETE FROM product_categories WHERE product_id = ?")->execute([$id]);
+        if (!empty($category_ids)) {
+            $stmt_cat = $pdo->prepare("INSERT INTO product_categories (product_id, category_id) VALUES (?, ?)");
+            foreach ($category_ids as $cat_id) {
+                $stmt_cat->execute([$id, $cat_id]);
+            }
         }
 
-        // Update or insert specs
-        $stmt_spec_check = $pdo->prepare("SELECT id FROM product_specifications WHERE product_id = ?");
-        $stmt_spec_check->execute([$id]);
-        if ($stmt_spec_check->fetch()) {
-            $stmt_spec_upd = $pdo->prepare("UPDATE product_specifications SET cpu=?, ram=?, storage=?, gpu=?, screen=?, wifi=?, bluetooth=?, os=?, weight=?, battery=?, ports=? WHERE product_id=?");
-            $stmt_spec_upd->execute([$cpu, $ram, $storage, $gpu, $screen, $wifi, $bluetooth, $os, $weight, $battery, $ports, $id]);
-        } else {
-            $stmt_spec_ins = $pdo->prepare("INSERT INTO product_specifications (product_id, cpu, ram, storage, gpu, screen, wifi, bluetooth, os, weight, battery, ports) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt_spec_ins->execute([$id, $cpu, $ram, $storage, $gpu, $screen, $wifi, $bluetooth, $os, $weight, $battery, $ports]);
-        }
-        
-        // Handle additional images upload
         $uploadDir = __DIR__ . '/../uploads/products/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-        
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $maxSize = 5 * 1024 * 1024;
+
+        // Handle images upload
         if (!empty($_FILES['product_images']['name'][0])) {
             $fileCount = count($_FILES['product_images']['name']);
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            $maxSize = 5 * 1024 * 1024;
             
-            // Get current max position
+            $stmt_check_main = $pdo->prepare("SELECT COUNT(*) FROM product_images WHERE product_id = ? AND position = 0");
+            $stmt_check_main->execute([$id]);
+            $has_main = $stmt_check_main->fetchColumn() > 0;
+
             $stmt_pos = $pdo->prepare("SELECT MAX(position) FROM product_images WHERE product_id = ?");
             $stmt_pos->execute([$id]);
-            $max_pos = (int)$stmt_pos->fetchColumn();
+            $max_pos = $stmt_pos->fetchColumn();
+            if ($max_pos === null) $max_pos = -1;
 
             $stmt_img_ins = $pdo->prepare("INSERT INTO product_images (product_id, url, position) VALUES (?, ?, ?)");
             
@@ -105,17 +156,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
                         $newFileName = uniqid() . '_' . time() . '.' . $fileExt;
                         if (move_uploaded_file($fileTmp, $uploadDir . $newFileName)) {
-                            $max_pos++;
-                            $stmt_img_ins->execute([$id, 'uploads/products/' . $newFileName, $max_pos]);
+                            $pos = 0;
+                            if (!$has_main && $i === 0) {
+                                $pos = 0;
+                                $has_main = true;
+                            } else {
+                                $max_pos++;
+                                $pos = ($max_pos < 1) ? 1 : $max_pos;
+                                if ($pos <= 0) $pos = 1;
+                            }
+                            $stmt_img_ins->execute([$id, 'uploads/products/' . $newFileName, $pos]);
                         }
                     }
                 }
             }
         }
+
+        // Update or insert specs
+        $stmt_spec_check = $pdo->prepare("SELECT id FROM product_specifications WHERE product_id = ?");
+        $stmt_spec_check->execute([$id]);
+        if ($stmt_spec_check->fetch()) {
+            $stmt_spec_upd = $pdo->prepare("UPDATE product_specifications SET cpu=?, ram=?, storage=?, gpu=?, screen=?, wifi=?, bluetooth=?, os=?, weight=?, battery=?, ports=? WHERE product_id=?");
+            $stmt_spec_upd->execute([$cpu, $ram, $storage, $gpu, $screen, $wifi, $bluetooth, $os, $weight, $battery, $ports, $id]);
+        } else {
+            $stmt_spec_ins = $pdo->prepare("INSERT INTO product_specifications (product_id, cpu, ram, storage, gpu, screen, wifi, bluetooth, os, weight, battery, ports) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt_spec_ins->execute([$id, $cpu, $ram, $storage, $gpu, $screen, $wifi, $bluetooth, $os, $weight, $battery, $ports]);
+        }
         
         $pdo->commit();
         set_flash("success", "Cập nhật sản phẩm thành công.");
-        header('Location: products.php'); exit;
+        header("Location: edit_product.php?id=$id"); exit;
     } catch (Exception $e) {
         $pdo->rollBack();
         $error = "Lỗi: " . $e->getMessage();
@@ -259,13 +329,20 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                         <div class="card-body p-4">
                             <div class="mb-3">
-                                <label class="form-label small fw-bold">Danh mục</label>
-                                <select class="form-select" name="category_id">
-                                    <option value="">-- Chọn danh mục --</option>
+                                <label class="form-label small fw-bold">Danh mục (Chọn nhiều)</label>
+                                <div class="border rounded p-3 bg-light-subtle" style="max-height: 200px; overflow-y: auto;">
                                     <?php foreach ($categories as $cat): ?>
-                                        <option value="<?php echo $cat['id']; ?>" <?php echo $p['category_id'] == $cat['id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($cat['name']); ?></option>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="category_ids[]" 
+                                                value="<?php echo $cat['id']; ?>" 
+                                                id="cat_<?php echo $cat['id']; ?>"
+                                                <?php echo in_array($cat['id'], $current_category_ids) ? 'checked' : ''; ?>>
+                                            <label class="form-check-label small" for="cat_<?php echo $cat['id']; ?>">
+                                                <?php echo htmlspecialchars($cat['name']); ?>
+                                            </label>
+                                        </div>
                                     <?php endforeach; ?>
-                                </select>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold">Thương hiệu</label>
@@ -311,13 +388,9 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                         <div class="card-body p-4">
                             <div class="mb-3">
-                                <label class="form-label small fw-bold">Link Ảnh chính (URL)</label>
-                                <input class="form-control" name="image" value="<?php echo htmlspecialchars($current_image); ?>">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Tải lên ảnh mới (có thể chọn nhiều)</label>
+                                <label class="form-label small fw-bold">Tải lên ảnh sản phẩm</label>
                                 <input type="file" class="form-control" name="product_images[]" multiple accept="image/*">
+                                <div class="form-text x-small mt-2">Định dạng: JPG, PNG, GIF, WEBP. Ảnh đầu tiên (nếu sản phẩm chưa có ảnh chính) sẽ tự động làm ảnh chính.</div>
                             </div>
 
                             <?php 
@@ -326,14 +399,33 @@ require_once __DIR__ . '/includes/header.php';
                             $all_images = $stmt_all_imgs->fetchAll();
                             
                             if (!empty($all_images)): ?>
-                                <div class="row g-2 mt-2">
+                                <div class="row g-2 mt-3">
+                                    <label class="form-label small fw-bold col-12 mb-1">Ảnh hiện tại:</label>
                                     <?php foreach ($all_images as $img): 
                                         $preview_url = (strpos($img['url'], 'http') === 0) ? $img['url'] : '../' . ltrim($img['url'], '/');
                                     ?>
                                         <div class="col-4 col-md-3">
-                                            <div class="position-relative border rounded p-1 bg-white">
+                                            <div class="position-relative border rounded p-1 bg-white group">
                                                 <img src="<?php echo htmlspecialchars($preview_url); ?>" class="img-fluid rounded" style="height: 80px; width: 100%; object-fit: contain;">
-                                                <span class="position-absolute top-0 start-0 badge bg-dark opacity-75 m-1"><?php echo $img['position']; ?></span>
+                                                <span class="position-absolute top-0 start-0 badge <?php echo $img['position'] == 0 ? 'bg-primary' : 'bg-dark opacity-75'; ?> m-1">
+                                                    <?php echo $img['position'] == 0 ? 'Chính' : $img['position']; ?>
+                                                </span>
+                                                <div class="position-absolute top-0 end-0 m-1 d-flex flex-column gap-1">
+                                                    <a href="?id=<?php echo $id; ?>&delete_image_id=<?php echo $img['id']; ?>" 
+                                                       class="btn btn-danger btn-sm rounded-circle" 
+                                                       onclick="return confirm('Xóa ảnh này?')"
+                                                       style="width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; border: 2px solid white;">
+                                                        <i class="bi bi-x"></i>
+                                                    </a>
+                                                    <?php if ($img['position'] != 0): ?>
+                                                        <a href="?id=<?php echo $id; ?>&set_main_id=<?php echo $img['id']; ?>" 
+                                                           class="btn btn-warning btn-sm rounded-circle shadow-sm" 
+                                                           title="Đặt làm ảnh chính"
+                                                           style="width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center; border: 2px solid white;">
+                                                            <i class="bi bi-star-fill text-white" style="font-size: 10px;"></i>
+                                                        </a>
+                                                    <?php endif; ?>
+                                                </div>
                                             </div>
                                         </div>
                                     <?php endforeach; ?>
