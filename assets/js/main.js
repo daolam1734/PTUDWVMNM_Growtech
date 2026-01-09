@@ -44,7 +44,14 @@ function initBlossoms() {
 
 // Header interactions: search suggestions, cart hover, sticky shrink, mobile offcanvas
 document.addEventListener('DOMContentLoaded', function () {
-  initBlossoms();
+  // Chỉ hiển thị hiệu ứng rơi ở trang chủ
+  const isHomePage = window.location.pathname === '/weblaptop/' ||
+    window.location.pathname.endsWith('/index.php') ||
+    window.location.pathname === '/';
+
+  if (isHomePage) {
+    initBlossoms();
+  }
 
   // Debounce helper
   function debounce(fn, delay) {

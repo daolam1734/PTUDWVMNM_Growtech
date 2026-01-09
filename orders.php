@@ -263,6 +263,9 @@ require_once __DIR__ . '/includes/header.php';
         color: var(--tet-red);
         border-color: #fee2e2;
     }
+    
+    .border-dashed { border-style: dashed !important; border-width: 1px !important; }
+    .x-small { font-size: 0.75rem; }
 </style>
 
 <div class="container py-5">
@@ -387,6 +390,50 @@ require_once __DIR__ . '/includes/header.php';
                                             Phí vận chuyển: <?php echo number_format($o['shipping_fee'], 0, ',', '.'); ?> ₫
                                         </span>
                                     </div>
+
+                                    <?php if ($o['payment_method'] === 'banking' && ($o['payment_status'] ?? 'UNPAID') === 'UNPAID' && $o['order_status'] !== 'CANCELLED'): ?>
+                                        <div class="mt-3 p-3 rounded-3 bg-light border border-dashed">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <small class="text-danger fw-bold"><i class="bi bi-info-circle-fill me-1"></i> Vui lòng chuyển khoản:</small>
+                                                <button class="btn btn-sm btn-link p-0 text-decoration-none small" type="button" data-bs-toggle="collapse" data-bs-target="#bank-<?php echo $o['id']; ?>">
+                                                    Xem chi tiết
+                                                </button>
+                                            </div>
+                                            <div class="collapse show" id="bank-<?php echo $o['id']; ?>">
+                                                <div class="small bg-white p-2 rounded shadow-sm border">
+                                                    <p class="mb-1">Ngân hàng: <b><?php echo BANK_NAME; ?></b></p>
+                                                    <p class="mb-1">Chủ TK: <b><?php echo BANK_ACCOUNT_NAME; ?></b></p>
+                                                    <p class="mb-1">Số TK: <b class="text-danger"><?php echo BANK_ACCOUNT_NUMBER; ?></b></p>
+                                                    <p class="mb-0">Nội dung: <b class="text-primary"><?php echo $o['order_no']; ?></b></p>
+                                                    <div class="text-center mt-2 pt-2 border-top">
+                                                        <?php 
+                                                        $vietqr_url_order = "https://img.vietqr.io/image/" . BANK_ID . "-" . BANK_ACCOUNT_NUMBER . "-compact.png?amount=" . $o['total'] . "&addInfo=" . urlencode($o['order_no']) . "&accountName=" . urlencode(BANK_ACCOUNT_NAME);
+                                                        ?>
+                                                        <img src="<?php echo $vietqr_url_order; ?>" alt="QR VietQR" width="150" class="img-thumbnail">
+                                                        <div class="mt-1 xsmall text-muted">Quét VietQR để chuyển nhanh</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if ($o['payment_method'] === 'momo' && ($o['payment_status'] ?? 'UNPAID') === 'UNPAID' && $o['order_status'] !== 'CANCELLED'): ?>
+                                        <div class="mt-3 p-3 rounded-3 bg-light border border-dashed" style="border-color: #a50064 !important;">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <small class="fw-bold" style="color: #a50064;"><i class="bi bi-info-circle-fill me-1"></i> Thanh toán qua MoMo:</small>
+                                            </div>
+                                            <div class="small bg-white p-2 rounded shadow-sm border text-center">
+                                                <p class="mb-1">Số điện thoại: <b class="text-danger"><?php echo MOMO_PHONE; ?></b></p>
+                                                <p class="mb-2">Chủ TK: <b><?php echo MOMO_NAME; ?></b></p>
+                                                <?php 
+                                                $momo_qr_url_order = "https://api.vietqr.io/image/970422-" . MOMO_PHONE . "-compact.png?amount=" . $o['total'] . "&addInfo=" . urlencode($o['order_no']) . "&accountName=" . urlencode(MOMO_NAME);
+                                                ?>
+                                                <img src="<?php echo $momo_qr_url_order; ?>" alt="QR MoMo" width="150" class="img-thumbnail">
+                                                <div class="mt-1 xsmall text-muted">Quét mã MoMo để chuyển tiền</div>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
                                     <?php if ($o['order_status'] === 'PENDING'): ?>
                                         <div class="mt-3 d-flex gap-2">
                                             <form method="POST" onsubmit="return confirm('Hủy đơn hàng này?')">

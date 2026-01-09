@@ -350,13 +350,47 @@ require_once __DIR__ . "/includes/header.php";
                         </div>
                     </label>
 
+                    <!-- Banking Info (Hidden by default) -->
+                    <div id="banking-details" class="mt-3 p-3 rounded-3 bg-light border border-dashed d-none">
+                        <small class="text-muted fw-bold d-block mb-2">Thông tin chuyển khoản:</small>
+                        <div class="small">
+                            <p class="mb-1">Ngân hàng: <b><?php echo BANK_NAME; ?></b></p>
+                            <p class="mb-1">Chủ TK: <b><?php echo BANK_ACCOUNT_NAME; ?></b></p>
+                            <p class="mb-1 text-danger">Số TK: <b class="fs-6"><?php echo BANK_ACCOUNT_NUMBER; ?></b></p>
+                            <p class="mb-0">Nội dung: <b>WL [Mã đơn hàng]</b></p>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <?php 
+                            $vietqr_url = "https://img.vietqr.io/image/" . BANK_ID . "-" . BANK_ACCOUNT_NUMBER . "-compact.png?amount=" . $total . "&addInfo=WL Order&accountName=" . urlencode(BANK_ACCOUNT_NAME);
+                            ?>
+                            <img src="<?php echo $vietqr_url; ?>" alt="QR VietQR" class="img-thumbnail" width="150">
+                            <div class="mt-1 small text-muted">Quét VietQR để thanh toán nhanh</div>
+                        </div>
+                    </div>
+
                     <label class="payment-option w-100">
                         <input type="radio" name="payment_method" value="momo">
                         <div class="payment-content d-flex align-items-center">
-                            <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" width="30" class="me-3" alt="">
+                            <img src="https://developers.momo.vn/v3/img/logo2.svg" width="30" class="me-3" alt="">
                             <span>Ví điện tử MoMo</span>
                         </div>
                     </label>
+
+                    <!-- MoMo Info (Hidden by default) -->
+                    <div id="momo-details" class="mt-3 p-3 rounded-3 bg-light border border-dashed d-none" style="border-color: #a50064 !important;">
+                        <small class="fw-bold d-block mb-2" style="color: #a50064;">Thông tin ví MoMo:</small>
+                        <div class="small">
+                            <p class="mb-1">Chủ tài khoản: <b><?php echo MOMO_NAME; ?></b></p>
+                            <p class="mb-1 text-danger">Số điện thoại: <b class="fs-6"><?php echo MOMO_PHONE; ?></b></p>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <?php 
+                            $momo_qr_url = "https://api.vietqr.io/image/970422-" . MOMO_PHONE . "-compact.png?amount=" . $total . "&addInfo=WL Order&accountName=" . urlencode(MOMO_NAME);
+                            ?>
+                            <img src="<?php echo $momo_qr_url; ?>" alt="QR MoMo" class="img-thumbnail" width="150">
+                            <div class="mt-1 small text-muted">Quét MoMo để thanh toán nhanh</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="checkout-section mt-4">
@@ -477,6 +511,25 @@ function updateActiveCard(input) {
         input.closest('.address-card').classList.add('active');
     }
 }
+
+// Payment method toggle
+document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        const bankingDetails = document.getElementById('banking-details');
+        const momoDetails = document.getElementById('momo-details');
+        
+        // Hide all first
+        bankingDetails.classList.add('d-none');
+        momoDetails.classList.add('d-none');
+        
+        // Show selected
+        if (e.target.value === 'banking') {
+            bankingDetails.classList.remove('d-none');
+        } else if (e.target.value === 'momo') {
+            momoDetails.classList.remove('d-none');
+        }
+    });
+});
 </script>
 
 <?php require_once __DIR__ . "/includes/footer.php"; ?>
